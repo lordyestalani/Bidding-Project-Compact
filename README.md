@@ -140,6 +140,28 @@ Start again with `Start.ps1 -SkipBuild` if source files have not changed. Run
 does not rotate passwords in existing PostgreSQL storage. Do not use
 `docker compose down --volumes` unless you intend to erase saved data.
 
+## Recommended cloud setup
+
+For a private demo that runs while your computer is off, host the entire Docker
+Compose stack on one always-on Ubuntu cloud VM with persistent storage. The VM
+runs the web app, API, PostgreSQL, and the daily Airflow and dbt pipeline. Your
+computer only needs SSH and a browser to use it.
+
+1. Install Docker Engine with the Compose plugin and PowerShell 7 on the VM.
+   Allow about 4 GB of RAM for the containers, plus room for the operating system.
+   [Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+2. Clone the repository on the VM and run `pwsh -File ./Start.ps1` from its root.
+   Keep the generated `.env` and the PostgreSQL volume on persistent storage.
+3. From your computer, forward the web port through SSH, replacing
+   `user@your-vm` with your VM login.
+
+   ```bash
+   ssh -N -L 15180:127.0.0.1:15180 user@your-vm
+   ```
+
+   Keep the SSH session open and visit [localhost:15180](http://localhost:15180).
+   Keep the Compose ports bound to loopback for private access.
+
 ## Follow the data
 
 ```mermaid
@@ -220,8 +242,8 @@ image, so rebuild through Start.ps1 to use them in the running application.
 
 ## Limits and sources
 
-This is a **local portfolio demo**, with unauthenticated project access and a local
-Airflow standalone deployment. It is not ready for public multiuser hosting.
+This is a **private portfolio demo** with unauthenticated project access and
+Airflow in standalone mode. Public hosting requires application authentication.
 The figures describe planned cash flows, not realized payments or accounting profit.
 Reference rates are not bank execution rates. The UI shows the actual observation
 date; it does not promise a live or holiday-adjusted feed.
