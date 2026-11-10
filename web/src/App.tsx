@@ -330,6 +330,7 @@ export function App() {
                 <ProjectEditor
                   key={project.id + ":" + project.version}
                   project={project}
+                  busy={busy}
                   onSaved={saved}
                   onCancel={() => setEditing(false)}
                   onDirty={onDirty}

@@ -116,6 +116,55 @@ test("project switching is disabled while a save is in flight", async () => {
   );
 });
 
+test("the editor is locked while another project loads and unlocks if loading fails", async () => {
+  const first = {
+    id: "one",
+    name: "First bid",
+    customer: "",
+    notes: "",
+    archived: false,
+    version: 1,
+    lines: [],
+    metrics: {
+      complete: false,
+      incoming_php: null,
+      outgoing_php: null,
+      profit_php: null,
+      net_usd: null,
+    },
+    fx: { rate: null, observation_date: null, source: "ECB", last_run: null },
+  };
+  const second = { ...first, id: "two", name: "Second bid" };
+  let failLoad: (reason: Error) => void = () => {};
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url) => {
+      if (url === "/api/projects/two")
+        return new Promise((_, reject) => {
+          failLoad = reject;
+        });
+      const value =
+        url === "/api/projects/one"
+          ? first
+          : url === "/api/fx"
+            ? first.fx
+            : [first, second];
+      return { ok: true, json: async () => value };
+    }),
+  );
+  render(<App />);
+  fireEvent.click(await screen.findByRole("button", { name: /First bid/ }));
+  fireEvent.click(await screen.findByRole("button", { name: "Edit project" }));
+  fireEvent.click(screen.getByRole("button", { name: /Second bid/ }));
+  const name = screen.getByRole("textbox", { name: "Project name" });
+  expect(name).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Save project" })).toBeDisabled();
+  await act(async () => failLoad(new Error("Could not load project.")));
+  expect(screen.getByRole("alert")).toHaveTextContent("Could not load project.");
+  expect(name).toBeEnabled();
+  expect(name).toHaveValue("First bid");
+});
+
 test("a late refresh cannot overwrite the selected archive filter", async () => {
   const current = {
     id: "one",

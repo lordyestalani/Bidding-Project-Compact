@@ -3,12 +3,14 @@ import { request, type Line, type Project } from "./api";
 
 export function ProjectEditor({
   project,
+  busy,
   onSaved,
   onCancel,
   onDirty,
   onSaving,
 }: {
   project: Project;
+  busy: boolean;
   onSaved: (p: Project) => void;
   onCancel: () => void;
   onDirty: (value: boolean) => void;
@@ -22,6 +24,7 @@ export function ProjectEditor({
     ),
     [saving, setSaving] = useState(false),
     [error, setError] = useState("");
+  const disabled = busy || saving;
   const dirty =
     JSON.stringify({ name, customer, notes, lines }) !==
     JSON.stringify({
@@ -47,7 +50,7 @@ export function ProjectEditor({
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (saving) return;
+    if (disabled) return;
     setSaving(true);
     onSaving(true);
     setError("");
@@ -86,7 +89,7 @@ export function ProjectEditor({
             maxLength={200}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            disabled={saving}
+            disabled={disabled}
           />
         </label>
         <label>
@@ -95,7 +98,7 @@ export function ProjectEditor({
             maxLength={200}
             value={customer}
             onChange={(e) => setCustomer(e.target.value)}
-            disabled={saving}
+            disabled={disabled}
           />
         </label>
       </div>
@@ -106,14 +109,14 @@ export function ProjectEditor({
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          disabled={saving}
+          disabled={disabled}
         />
       </label>
       <p className="muted">
         Enter planned amounts. Leave an unknown amount blank.
       </p>
       {lines.map((line, i) => (
-        <fieldset className="flow-editor" key={i} disabled={saving}>
+        <fieldset className="flow-editor" key={i} disabled={disabled}>
           <legend>Cash flow {i + 1}</legend>
           <div className="flow-grid">
             <label>
@@ -187,7 +190,7 @@ export function ProjectEditor({
       <button
         className="secondary"
         type="button"
-        disabled={saving || lines.length >= 200}
+        disabled={disabled || lines.length >= 200}
         onClick={() =>
           setLines([
             ...lines,
@@ -209,13 +212,13 @@ export function ProjectEditor({
         </p>
       )}
       <div className="form-actions">
-        <button type="submit" disabled={saving}>
+        <button type="submit" disabled={disabled}>
           {saving ? "Saving…" : "Save project"}
         </button>
         <button
           type="button"
           className="secondary"
-          disabled={saving}
+          disabled={disabled}
           onClick={() => {
             if (!dirty || window.confirm("Discard unsaved changes?"))
               onCancel();
