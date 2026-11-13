@@ -52,9 +52,14 @@ export async function request<T>(
     ...options,
     headers: { "Content-Type": "application/json", ...options.headers },
   });
-  const value = await response.json();
+  const value = await response.json().catch((error: unknown) => {
+    if (!response.ok && error instanceof SyntaxError) {
+      throw new Error(`Request failed (HTTP ${response.status}). Please try again.`);
+    }
+    throw error;
+  });
   if (!response.ok) {
-    const detail = value.detail;
+    const detail = value?.detail;
     throw new Error(
       typeof detail === "string"
         ? detail

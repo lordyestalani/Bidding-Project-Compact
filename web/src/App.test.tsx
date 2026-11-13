@@ -10,6 +10,24 @@ import { App } from "./App";
 
 afterEach(() => vi.unstubAllGlobals());
 
+test("an HTML gateway error shows a readable message", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url) =>
+      url === "/api/fx"
+        ? Response.json({ rate: null, observation_date: null, last_run: null })
+        : new Response("<html><h1>Bad Gateway</h1></html>", {
+            status: 502,
+            headers: { "Content-Type": "text/html" },
+          }),
+    ),
+  );
+  render(<App />);
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Request failed (HTTP 502). Please try again.",
+  );
+});
+
 test("failed saves keep entered cash flows available for correction", async () => {
   const project = {
     id: "one",
