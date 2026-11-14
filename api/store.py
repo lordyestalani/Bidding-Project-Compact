@@ -5,10 +5,14 @@ from uuid import uuid4
 from fastapi import HTTPException
 
 
-def fx(conn):
-    rate = conn.execute(
+def latest_rate(conn):
+    return conn.execute(
         "SELECT observation_date,rate,source FROM analytics.fx_rates WHERE observation_date <= (now() AT TIME ZONE 'Asia/Manila')::date ORDER BY observation_date DESC LIMIT 1"
     ).fetchone()
+
+
+def fx(conn):
+    rate = latest_rate(conn)
     run = conn.execute(
         "SELECT id,status,started_at,finished_at,error FROM ops.runs ORDER BY started_at DESC,id DESC LIMIT 1"
     ).fetchone()
@@ -20,11 +24,17 @@ def fx(conn):
     }
 
 
-def totals(conn, project_id):
-    return conn.execute(
-        "SELECT complete,in_php,in_usd,out_php,out_usd FROM analytics.project_totals WHERE project_id=%s",
+def version_and_totals(conn, project_id):
+    row = conn.execute(
+        """SELECT p.version, t.complete, t.in_php, t.in_usd, t.out_php, t.out_usd
+           FROM analytics.project_totals t JOIN app.projects p ON p.id = t.project_id
+           WHERE t.project_id = %s""",
         (project_id,),
     ).fetchone()
+    if row is None:
+        raise HTTPException(404, "Project not found.")
+    version = row.pop("version")
+    return version, row
 
 
 def get_project(conn, project_id):

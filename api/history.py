@@ -8,8 +8,8 @@ from api.valuation import metrics
 
 
 def profit_history(conn, project_id, days: int):
-    project = store.get_project(conn, project_id)
-    totals = store.totals(conn, project_id)
+    version, totals = store.version_and_totals(conn, project_id)
+    reference = store.latest_rate(conn)
     today = datetime.now(ZoneInfo("Asia/Manila")).date()
     start = today - timedelta(days=days - 1)
     rates = (
@@ -21,13 +21,13 @@ def profit_history(conn, project_id, days: int):
         else []
     )
     return {
-        "project_version": project["version"],
+        "project_version": version,
         "basis": "current_cash_flows",
         "complete": totals["complete"],
         "from_date": start,
         "to_date": today,
-        "reference_rate": project["fx"]["rate"],
-        "reference_date": project["fx"]["observation_date"],
+        "reference_rate": format(reference["rate"], ".8f") if reference else None,
+        "reference_date": reference["observation_date"] if reference else None,
         "points": [
             {
                 "observation_date": row["observation_date"],

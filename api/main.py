@@ -85,15 +85,15 @@ def create_app(database_url: str | None = None) -> FastAPI:
     def scenario(project_id: UUID, body: Scenario):
         with connection() as conn, localcontext() as context:
             context.prec = 50
-            project = store.get_project(conn, project_id)
-            values = store.totals(conn, project_id)
-            result = metrics(**values, rate=Decimal(body.rate_php_per_usd))
-            reference_rate = project["fx"]["rate"]
+            version, values = store.version_and_totals(conn, project_id)
+            rate = Decimal(body.rate_php_per_usd)
+            result = metrics(**values, rate=rate)
+            reference = store.latest_rate(conn)
             difference = None
-            if result["profit_php"] is not None and reference_rate is not None:
+            if result["profit_php"] is not None and reference is not None:
                 difference = money(
                     (values["in_usd"] - values["out_usd"])
-                    * (Decimal(body.rate_php_per_usd) - Decimal(reference_rate))
+                    * (rate - reference["rate"])
                 )
             elif (
                 result["profit_php"] is not None
@@ -104,7 +104,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
                 "metrics": result,
                 "rate_php_per_usd": body.rate_php_per_usd,
                 "hypothetical": True,
-                "project_version": project["version"],
+                "project_version": version,
                 "difference_php": difference,
             }
 
