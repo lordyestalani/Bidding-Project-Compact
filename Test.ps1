@@ -16,16 +16,18 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Browser test services failed to start.' }
         Push-Location web
         try {
-            npm.cmd ci
+            $npm = if ($IsWindows) { 'npm.cmd' } else { 'npm' }
+            $npx = if ($IsWindows) { 'npx.cmd' } else { 'npx' }
+            & $npm ci
             if ($LASTEXITCODE -ne 0) { throw 'Frontend test dependency install failed.' }
-            npx.cmd playwright install chromium
+            & $npx playwright install chromium
             if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
-            npm.cmd test
+            & $npm test
             if ($LASTEXITCODE -ne 0) { throw 'Component tests failed.' }
-            npm.cmd run build
+            & $npm run build
             if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
             $env:BROWSER_TEST_URL = 'http://127.0.0.1:15181'
-            npm.cmd run e2e
+            & $npm run e2e
             if ($LASTEXITCODE -ne 0) { throw 'Browser tests failed.' }
         } finally { Pop-Location }
     }
