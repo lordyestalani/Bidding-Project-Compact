@@ -30,7 +30,8 @@ function observationAge(observed: string) {
 export function App() {
   const [rows, setRows] = useState<ProjectRow[]>([]),
     [project, setProject] = useState<Project | null>(null),
-    [fx, setFx] = useState<FX | null>(null);
+    [workspaceFx, setWorkspaceFx] = useState<FX | null>(null);
+  const fx = project?.fx ?? workspaceFx;
   const [search, setSearch] = useState(""),
     [archived, setArchived] = useState(false),
     [name, setName] = useState(""),
@@ -67,7 +68,7 @@ export function App() {
   }, [archived, listVersion]);
   useEffect(() => {
     request<FX>("/fx")
-      .then(setFx)
+      .then(setWorkspaceFx)
       .catch((reason) => setError(reason.message));
   }, []);
   async function open(id: string) {
@@ -79,7 +80,6 @@ export function App() {
       const value = await request<Project>(`/projects/${id}`);
       if (current === ticket.current) {
         setProject(value);
-        setFx(value.fx);
         setEditing(false);
         dirty.current = false;
       }
@@ -100,7 +100,6 @@ export function App() {
         body: JSON.stringify({ name, request_id: createKey.current }),
       });
       setProject(value);
-      setFx(value.fx);
       setName("");
       setCreating(false);
       createKey.current = crypto.randomUUID();
@@ -115,7 +114,6 @@ export function App() {
   }
   function saved(value: Project) {
     setProject(value);
-    setFx(value.fx);
     setEditing(false);
     dirty.current = false;
     setListVersion((current) => current + 1);
@@ -280,7 +278,7 @@ export function App() {
                 if (project) void open(project.id);
                 else
                   void request<FX>("/fx")
-                    .then(setFx)
+                    .then(setWorkspaceFx)
                     .catch((reason) => setError(reason.message));
               }}
             >
