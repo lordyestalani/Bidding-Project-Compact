@@ -45,25 +45,24 @@ test.each([
   else expect(source).not.toHaveTextContent(warning);
 });
 
-test("an HTML gateway error shows a readable message", async () => {
+test.each([
+  [502, "<html><h1>Bad Gateway</h1></html>", "Request failed (HTTP 502). Please try again."],
+  [200, "<html>Unexpected page</html>", "The server returned an unexpected response. Please try again."],
+  [422, '{"detail":[null,"invalid"]}', "Request failed. Please try again."],
+])("an unexpected response with HTTP %i shows a readable message", async (status, body, message) => {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url) =>
       url === "/api/fx"
         ? Response.json({ rate: null, observation_date: null, last_run: null })
-        : new Response("<html><h1>Bad Gateway</h1></html>", {
-            status: 502,
-            headers: { "Content-Type": "text/html" },
-          }),
+        : new Response(body, { status }),
     ),
   );
   render(<App />);
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Request failed (HTTP 502). Please try again.",
-  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(message);
 });
 
-test("failed saves keep entered cash flows available for correction", async () => {
+test.each([422, 409])("a failed save with HTTP %i preserves the draft", async (status) => {
   const project = {
     id: "one",
     name: "Example bid",
@@ -87,6 +86,7 @@ test("failed saves keep entered cash flows available for correction", async () =
       if (options?.method === "PUT")
         return {
           ok: false,
+          status,
           json: async () => ({ detail: "Save failed. Try again." }),
         };
       if (String(url).includes("/projects/one"))
@@ -116,6 +116,11 @@ test("failed saves keep entered cash flows available for correction", async () =
   expect(screen.getByLabelText("Description 1")).toHaveValue(
     "Customer advance",
   );
+  if (status === 409) {
+    const draft = screen.getByLabelText<HTMLTextAreaElement>("Draft to copy");
+    expect(JSON.parse(draft.value).lines[0].amount).toBe("12345.67");
+    expect(screen.getByRole("button", { name: "Save project" })).toBeDisabled();
+  }
 });
 
 test("project switching is disabled while a save is in flight", async () => {

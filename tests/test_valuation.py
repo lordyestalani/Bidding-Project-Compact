@@ -69,8 +69,8 @@ def test_decimal_strings_and_precision():
     assert metrics(D(0), D("0.0001"), D(0), D(0), True, D("49.5"))[
         "profit_php"
     ] == "0.00495"
-    # Two tiny USD amounts are aggregated before rounding, not rounded per line.
+    # Preserve the exact total even below the previously rounded precision.
     assert (
         metrics(D("0"), D("0.0002"), D("0"), D("0"), True, D("0.3"))["profit_php"]
-        == "0.0001"
+        == "0.00006"
     )

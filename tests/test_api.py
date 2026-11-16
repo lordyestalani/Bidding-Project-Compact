@@ -65,6 +65,14 @@ def test_create_replay_and_changed_key_payload(client):
     )
 
 
+def test_reject_nul_in_names_before_database_write(client):
+    result = client.post(
+        "/api/projects", json={"name": "A\x00B", "request_id": str(uuid4())}
+    )
+    assert result.status_code == 422
+    assert client.get("/api/projects").json() == []
+
+
 def test_archive_restore_and_unknown_budget(client):
     record = project(client)
     body = budget(record)

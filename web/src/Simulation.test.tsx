@@ -74,6 +74,28 @@ test("missing source rate keeps the scenario explicitly hypothetical", () => {
   expect(screen.getByText(/no reference rate/i)).toBeInTheDocument();
 });
 
+test("a new reference preserves a custom rate and becomes the reset value", () => {
+  const { rerender } = mount();
+  fireEvent.change(screen.getByLabelText("Scenario rate"), {
+    target: { value: "58" },
+  });
+  rerender(
+    <Simulation projectId="project-one" version={1} referenceRate="60" />,
+  );
+  expect(screen.getByLabelText("Scenario rate")).toHaveValue("58");
+  fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+  expect(screen.getByLabelText("Scenario rate")).toHaveValue("60");
+});
+
+test("the slider keeps a tiny positive scenario valid", () => {
+  mount("0.00000001");
+  fireEvent.change(screen.getByLabelText("Exchange rate slider"), {
+    target: { value: "0.00000002" },
+  });
+  expect(screen.getByLabelText("Scenario rate")).toHaveValue("0.00000002");
+  expect(screen.queryByText(/positive rate/i)).not.toBeInTheDocument();
+});
+
 test("reset at the reference rate keeps the result visible", async () => {
   mount();
   await waitFor(() =>
