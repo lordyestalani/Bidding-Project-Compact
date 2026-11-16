@@ -8,7 +8,42 @@ import {
 import { afterEach, expect, test, vi } from "vitest";
 import { App } from "./App";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+test.each([
+  { date: "2026-11-13", age: 4, showsWarning: true },
+  { date: "2026-11-14", age: 3, showsWarning: false },
+])("shows FX freshness independently of a successful run on $date", async ({
+  date,
+  age,
+  showsWarning,
+}) => {
+  vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-16T16:30:00Z"));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url) =>
+      Response.json(
+        url === "/api/fx"
+          ? {
+              rate: "55.00000000",
+              observation_date: date,
+              source: "ECB",
+              last_run: { status: "success" },
+            }
+          : [],
+      ),
+    ),
+  );
+  render(<App />);
+  const source = await screen.findByText(/Observed/);
+  const warning = `Reference rate is ${age} days old.`;
+  expect(source).toHaveTextContent(`Observed ${date}`);
+  if (showsWarning) expect(source).toHaveTextContent(warning);
+  else expect(source).not.toHaveTextContent(warning);
+});
 
 test("an HTML gateway error shows a readable message", async () => {
   vi.stubGlobal(

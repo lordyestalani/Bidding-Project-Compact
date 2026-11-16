@@ -9,6 +9,24 @@ import {
 import { ProjectEditor } from "./ProjectEditor";
 import { Simulation } from "./Simulation";
 
+const manilaDate = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Manila",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function observationAge(observed: string) {
+  const { year, month, day } = Object.fromEntries(
+    manilaDate.formatToParts(Date.now()).map(({ type, value }) => [type, value]),
+  );
+  return (
+    (Date.parse(`${year}-${month}-${day}T00:00:00Z`) -
+      Date.parse(`${observed}T00:00:00Z`)) /
+    86_400_000
+  );
+}
+
 export function App() {
   const [rows, setRows] = useState<ProjectRow[]>([]),
     [project, setProject] = useState<Project | null>(null),
@@ -119,6 +137,7 @@ export function App() {
       setBusy(false);
     }
   }
+  const rateAge = fx?.observation_date ? observationAge(fx.observation_date) : 0;
   const filtered = rows.filter((row) =>
     `${row.name} ${row.customer}`.toLowerCase().includes(search.toLowerCase()),
   );
@@ -247,6 +266,7 @@ export function App() {
                 {fx?.observation_date
                   ? `Observed ${fx.observation_date} · ${fx.source}`
                   : "You can still add projects and try hypothetical rates."}
+                {rateAge >= 4 ? ` · Reference rate is ${rateAge} days old.` : ""}
                 {fx?.last_run?.status === "failed"
                   ? " · Latest update failed; last successful rate retained."
                   : ""}
