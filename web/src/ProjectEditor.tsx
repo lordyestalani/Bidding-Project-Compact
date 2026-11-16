@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { request, type Line, type Project } from "./api";
+import { request, RequestError, type Line, type Project } from "./api";
 
 export function ProjectEditor({
   project,
@@ -23,7 +23,8 @@ export function ProjectEditor({
       project.lines.map((line) => ({ ...line })),
     ),
     [saving, setSaving] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [conflict, setConflict] = useState(false);
   const disabled = busy || saving;
   const dirty =
     JSON.stringify({ name, customer, notes, lines }) !==
@@ -50,7 +51,7 @@ export function ProjectEditor({
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    if (disabled) return;
+    if (disabled || conflict) return;
     setSaving(true);
     onSaving(true);
     setError("");
@@ -70,6 +71,8 @@ export function ProjectEditor({
       );
     } catch (reason) {
       setError((reason as Error).message);
+      if (reason instanceof RequestError && reason.status === 409)
+        setConflict(true);
     } finally {
       setSaving(false);
       onSaving(false);
@@ -211,8 +214,20 @@ export function ProjectEditor({
           {error}
         </p>
       )}
+      {conflict && (
+        <label>
+          Copy your draft before refreshing the saved project.
+          <textarea
+            aria-label="Draft to copy"
+            readOnly
+            rows={6}
+            value={JSON.stringify({ name, customer, notes, lines }, null, 2)}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </label>
+      )}
       <div className="form-actions">
-        <button type="submit" disabled={disabled}>
+        <button type="submit" disabled={disabled || conflict}>
           {saving ? "Saving…" : "Save project"}
         </button>
         <button
