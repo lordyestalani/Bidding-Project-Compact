@@ -9,6 +9,11 @@ saved amounts.
 
 ## What it does
 
+- Compares active projects on one dashboard with a shared FX scenario. Each bar
+  shows the change in estimated profit from the published reference rate.
+  Select a bar to open the project. Totals show their project counts and
+  exclude budgets with missing amounts.
+
 - Saves your own projects and planned cash flows in PHP or USD.
 - Shows incoming total, outgoing total, and estimated profit in PHP.
 - Simulates FX changes with a slider and an exact numeric input.

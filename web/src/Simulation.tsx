@@ -76,16 +76,8 @@ export function Simulation({
       />
       <section className="simulation" aria-labelledby="simulation-title">
         <div className="section-head">
-          <div>
-            <div className="eyebrow">WHAT IF?</div>
-            <h2 id="simulation-title">Try a different exchange rate</h2>
-          </div>
-          <span className="pill">Simulation only</span>
+          <h2 id="simulation-title">Exchange rate scenario</h2>
         </div>
-        <p className="muted">
-          Move the slider to see how a stronger or weaker dollar changes this
-          project.
-        </p>
         <div className="rate-control">
           <div>
             <label htmlFor="scenario-rate">Scenario rate</label>

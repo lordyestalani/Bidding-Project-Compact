@@ -3,13 +3,14 @@ from decimal import Decimal, localcontext
 from uuid import UUID
 
 import psycopg
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.responses import JSONResponse
 from psycopg.rows import dict_row
 
 from api import store
 from api.models import ProjectCreate, ProjectSave, Scenario
-from api.valuation import metrics, money
+from api.portfolio import portfolio
+from api.valuation import metrics, money, parse_decimal
 from api.history import profit_history
 
 
@@ -55,6 +56,17 @@ def create_app(database_url: str | None = None) -> FastAPI:
     def fx():
         with connection() as conn:
             return store.fx(conn)
+
+    @app.get("/api/portfolio")
+    def portfolio_overview(rate: str | None = Query(default=None, max_length=21)):
+        try:
+            scenario_rate = (
+                parse_decimal(rate, places=8, positive=True) if rate is not None else None
+            )
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        with connection() as conn:
+            return portfolio(conn, scenario_rate)
 
     @app.get("/api/projects")
     def projects(archived: bool = False):
