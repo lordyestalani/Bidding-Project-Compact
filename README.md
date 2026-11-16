@@ -13,7 +13,6 @@ saved amounts.
   shows the change in estimated profit from the published reference rate.
   Select a bar to open the project. Totals show their project counts and
   exclude budgets with missing amounts.
-
 - Saves your own projects and planned cash flows in PHP or USD.
 - Shows incoming total, outgoing total, and estimated profit in PHP.
 - Simulates FX changes with a slider and an exact numeric input.
@@ -35,16 +34,25 @@ observations. The chart always displays the latest 90 calendar days.
 
 ## Screenshots
 
-Captured from the running local app on **2026-11-02**, using two
-school sample projects and published ECB/Frankfurter observations. The sidebar
-is filtered to those school projects. Rates and amounts are snapshots, not a live feed.
+Captured from the running local app on **2026-11-17** using sample projects and
+published ECB/Frankfurter observations. The reference rate shown is
+**63.813 PHP per USD**, observed on **2026-11-13**.
+
+### Portfolio dashboard
+
+One shared rate compares all five active sample projects. At **50 PHP per USD**,
+the estimated portfolio profit rises from **PHP 2,310,928** to **PHP 4,300,000**.
+The bars show which projects gain or lose estimated profit. Select a bar to open
+its project details.
+
+![Portfolio dashboard comparing five sample projects at 50 PHP per USD, with gains and losses on opposite sides of zero](docs/screenshots/portfolio-dashboard.png)
 
 ### Project overview
 
 Select a project to see incoming cash flows, outgoing cash flows, estimated
 profit, and the FX history chart. **School Supply (Tech) Procurement** has
 PHP 5,000,000 incoming and USD 60,000 outgoing. At the displayed reference rate
-of **63.68 PHP per USD**, its estimated profit is **PHP 1,179,200**.
+of **63.813 PHP per USD**, its estimated profit is **PHP 1,171,220**.
 
 ![Profitable school technology procurement sample with PHP totals and historical FX chart](docs/screenshots/project-overview.png)
 
@@ -57,7 +65,7 @@ gold line is the estimated profit or loss at the slider's hypothetical rate.
 
 **School Supply Procurement** has the same PHP 5,000,000 income but USD 94,000
 in supplier costs. At the displayed reference rate it has an estimated
-**PHP 985,920 loss**. Its historical FX estimates are shown in red. The dashed
+**PHP 998,422 loss**. Its historical FX estimates are shown in red. The dashed
 gold line shows how a hypothetical **50 PHP per USD** rate would instead produce
 a **PHP 300,000 profit**.
 
@@ -76,9 +84,9 @@ published reference rates.
 <summary>Loss overview, cash-flow editor, and mobile layout</summary>
 
 The second school project at the displayed reference rate, before changing the
-slider, shows its estimated PHP 985,920 loss:
+slider, shows its estimated PHP 998,422 loss.
 
-![School procurement overview showing a PHP 985,920 estimated loss](docs/screenshots/loss-overview.png)
+![School procurement overview showing a PHP 998,422 estimated loss](docs/screenshots/loss-overview.png)
 
 Add or edit incoming and outgoing amounts independently, choosing PHP or USD for
 each line. Expected dates are optional; blank amounts remain unknown.

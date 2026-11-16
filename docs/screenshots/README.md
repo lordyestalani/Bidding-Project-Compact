@@ -1,27 +1,28 @@
 # Screenshot notes
 
-Captured on 2026-11-02 from the running application at localhost:15180.
-The two school projects use sample data for demonstration.
-The sidebar search is set to School. No saved cash flows were edited during capture.
+Captured on 2026-11-17 from the running app at localhost:15180. The portfolio
+dashboard uses five demo projects. The sidebar is filtered to School for the
+individual project views.
 
-- project-overview.png: School Supply (Tech) Procurement; PHP 5,000,000 incoming,
-  USD 60,000 outgoing; reference rate 63.68; estimated PHP 1,179,200 profit.
-- loss-overview.png: School Supply Procurement; PHP 5,000,000 incoming,
-  USD 94,000 outgoing; reference rate 63.68; estimated PHP 985,920 loss.
-- fx-profit-chart.png: The loss project's historical FX estimates with the slider
-  set to 50 PHP/USD. The dashed line is its hypothetical PHP 300,000 profit.
-- scenario-simulation.png: The same hypothetical rate: PHP 4,700,000 outgoing
-  against PHP 5,000,000 incoming. No source rates or saved amounts are overwritten.
-- cash-flow-editor.png: The loss project's existing budget, opened without saving.
-- mobile-view.png: The same project at a 390 by 844 viewport, captured full-page.
+- `portfolio-dashboard.png` shows the effect of a 50 PHP/USD scenario across
+  all five active projects. Total estimated profit rises from PHP 2,310,928 to
+  PHP 4,300,000.
+- `project-overview.png` shows School Supply (Tech) Procurement with PHP
+  5,000,000 incoming and USD 60,000 outgoing. Estimated profit is PHP 1,171,220.
+- `loss-overview.png` shows School Supply Procurement with PHP 5,000,000
+  incoming and USD 94,000 outgoing. Estimated loss is PHP 998,422.
+- `fx-profit-chart.png` shows the loss project's historical estimates and a
+  dashed scenario line at PHP 300,000 profit.
+- `scenario-simulation.png` shows how the 50 PHP/USD scenario converts the
+  supplier cost to PHP 4,700,000.
+- `cash-flow-editor.png` shows the loss project's saved cash flows in the editor.
+- `mobile-view.png` shows the loss project and profitable scenario at a
+  390 by 844 viewport, captured full-page.
 
-Published source observations in the screenshots span August through October
-2026, with the latest observation dated 2026-10-30. They came through the normal
-ECB/Frankfurter pipeline. Business amounts are sample inputs. These static images
-are not a live feed and do not represent realized accounting profit.
+The reference is 63.813 PHP/USD from 2026-11-13. The history chart shows
+published observations from 2026-08-20 through 2026-11-13. The estimates use
+planned sample cash flows. Desktop screenshots use a 1440 by 1100 viewport
+at device scale 1.
 
-The app order is summary cards, FX chart, slider simulation, then saved cash flows.
-Screenshots were captured at device scale 1; desktop viewport 1440 by 1100.
-If the UI or samples change, refresh these images and update the numerical captions
-in the root README together. Keep PNG assets here committed; generated browser
-reports and temporary capture scripts remain ignored.
+Refresh the image files and numerical captions together when the UI or
+sample data changes.
