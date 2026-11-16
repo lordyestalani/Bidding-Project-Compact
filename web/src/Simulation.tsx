@@ -23,11 +23,12 @@ export function Simulation({
   const [loading, setLoading] = useState(true);
   const valid = /^[0-9]{1,12}(\.[0-9]{1,8})?$/.test(rate) && Number(rate) > 0;
   const anchor = Number(referenceRate ?? 55);
-  const min = Math.max(
-    0.00000001,
-    Math.min(anchor * 0.7, Number(rate) || anchor),
+  const sliderRate = valid ? Math.min(Number(rate), 999_999_999_999) : anchor;
+  const min = Math.max(0.00000001, Math.min(anchor * 0.7, sliderRate));
+  const max = Math.min(
+    999_999_999_999,
+    Math.max(anchor * 1.3, sliderRate, min + 0.00000001),
   );
-  const max = Math.max(anchor * 1.3, Number(rate) || anchor);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -121,9 +122,9 @@ export function Simulation({
           min={min}
           max={max}
           step="any"
-          value={valid ? Number(rate) : anchor}
+          value={sliderRate}
           onChange={(e) => {
-            setCustomRate(Number(e.target.value).toFixed(4));
+            setCustomRate(Number(e.target.value).toFixed(8));
             setResult(null);
           }}
         />
