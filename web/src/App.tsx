@@ -7,6 +7,7 @@ import {
   type ProjectRow,
 } from "./api";
 import { ProjectEditor } from "./ProjectEditor";
+import { PortfolioDashboard } from "./PortfolioDashboard";
 import { Simulation } from "./Simulation";
 
 const manilaDate = new Intl.DateTimeFormat("en-CA", {
@@ -43,6 +44,7 @@ export function App() {
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
   const [listVersion, setListVersion] = useState(0);
+  const [portfolioRate, setPortfolioRate] = useState<string | null>(null);
   const dirty = useRef(false),
     ticket = useRef(0),
     createKey = useRef(crypto.randomUUID());
@@ -177,7 +179,26 @@ export function App() {
         Skip to content
       </a>
       <header className="topbar">
-        <a className="brand" href="/" aria-label="Bidding and FX home">
+        <a
+          className="brand"
+          href="/"
+          aria-label="Bidding and FX home"
+          onClick={(event) => {
+            if (
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            event.preventDefault();
+            if (busy || !canLeave()) return;
+            setProject(null);
+            setEditing(false);
+            setError("");
+            document.getElementById("main")?.focus();
+          }}
+        >
           <span className="brand-icon" aria-hidden="true">
             ↗
           </span>
@@ -275,7 +296,7 @@ export function App() {
         </aside>
         <main id="main" className="main-content" tabIndex={-1}>
           <div className="page-heading">
-            <h1>Project workspace</h1>
+            <h1>{project ? "Project workspace" : "Portfolio overview"}</h1>
           </div>
           <div className="source-strip">
             <span className="source-icon" aria-hidden="true">
@@ -325,19 +346,14 @@ export function App() {
             </p>
           )}
           {!project ? (
-            <section className="panel empty-state">
-              <h2>
-                {rows.length ? "Select a project" : "Start with a project"}
-              </h2>
-              <p>
-                {rows.length
-                  ? "Choose a project from the list to review its cash flows and exchange rate scenarios."
-                  : "Add a project to track its planned cash flows and estimate profit in PHP."}
-              </p>
-              {!rows.length && (
-                <button onClick={() => setCreating(true)}>Add a project</button>
-              )}
-            </section>
+            <PortfolioDashboard
+              fx={workspaceFx}
+              rate={portfolioRate}
+              onRateChange={setPortfolioRate}
+              onOpenProject={open}
+              onAddProject={() => setCreating(true)}
+              busy={busy}
+            />
           ) : (
             <>
               <div className="project-heading">

@@ -82,3 +82,51 @@ test("create, edit both cash flows, simulate, archive and restore", async ({
     page.getByRole("button", { name: new RegExp(name) }),
   ).toBeVisible();
 });
+
+test("compare opposing USD exposures and open a project from the portfolio", async ({
+  page,
+  request,
+}) => {
+  const stamp = Date.now();
+  for (const direction of ["incoming", "outgoing"]) {
+    const name = `Portfolio ${direction} ${stamp}`;
+    const created = await request.post("/api/projects", {
+      data: { name, request_id: crypto.randomUUID() },
+    });
+    expect(created.ok()).toBe(true);
+    const { id, version } = await created.json();
+    const saved = await request.put(`/api/projects/${id}`, {
+      data: {
+        name,
+        version,
+        lines: [{ label: name, direction, currency: "USD", amount: "100" }],
+      },
+    });
+    expect(saved.ok()).toBe(true);
+  }
+
+  await page.goto("/");
+  const chart = page.getByRole("list", {
+    name: "Estimated profit changes by project",
+  });
+  await page.getByLabel("Portfolio scenario rate", { exact: true }).fill("56");
+  const income = chart.getByRole("button", { name: /Portfolio incoming/ });
+  const cost = chart.getByRole("button", { name: /Portfolio outgoing/ });
+  await expect(income).toContainText("PHP +100.00");
+  await expect(cost).toContainText("PHP -100.00");
+  await expect(income.locator(".gain-bar")).toBeVisible();
+  await expect(cost.locator(".loss-bar")).toBeVisible();
+  await income.click();
+  await expect(
+    page.getByRole("heading", { name: `Portfolio incoming ${stamp}` }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Bidding and FX home" }).click();
+  await expect(
+    page.getByLabel("Portfolio scenario rate", { exact: true }),
+  ).toHaveValue("56");
+  await expect(cost).toContainText("PHP -100.00");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+});
