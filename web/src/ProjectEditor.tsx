@@ -82,7 +82,6 @@ export function ProjectEditor({
     <form className="panel editor" onSubmit={save}>
       <div className="section-head">
         <h2>Edit project & cash flows</h2>
-        <span className="pill">Unsaved draft</span>
       </div>
       <div className="field-grid">
         <label>

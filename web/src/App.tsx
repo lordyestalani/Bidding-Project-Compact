@@ -18,7 +18,9 @@ const manilaDate = new Intl.DateTimeFormat("en-CA", {
 
 function observationAge(observed: string) {
   const { year, month, day } = Object.fromEntries(
-    manilaDate.formatToParts(Date.now()).map(({ type, value }) => [type, value]),
+    manilaDate
+      .formatToParts(Date.now())
+      .map(({ type, value }) => [type, value]),
   );
   return (
     (Date.parse(`${year}-${month}-${day}T00:00:00Z`) -
@@ -156,11 +158,14 @@ export function App() {
       setBusy(false);
     }
   }
-  const rateAge = fx?.observation_date ? observationAge(fx.observation_date) : 0;
+  const rateAge = fx?.observation_date
+    ? observationAge(fx.observation_date)
+    : 0;
   const projectRun = project?.fx.last_run;
   const workspaceRun = workspaceFx?.last_run;
   const lastRun =
-    workspaceRun && (!projectRun || workspaceRun.started_at >= projectRun.started_at)
+    workspaceRun &&
+    (!projectRun || workspaceRun.started_at >= projectRun.started_at)
       ? workspaceRun
       : projectRun;
   const filtered = rows.filter((row) =>
@@ -173,18 +178,19 @@ export function App() {
       </a>
       <header className="topbar">
         <a className="brand" href="/" aria-label="Bidding and FX home">
-          <span className="brand-icon">↗</span>
+          <span className="brand-icon" aria-hidden="true">
+            ↗
+          </span>
           <span>
             Bidding <span className="brand-light">&</span> FX
           </span>
         </a>
         <span className="workspace-tag">
-          <span className="dot" /> Local workspace
+          <span className="dot" aria-hidden="true" /> Local workspace
         </span>
       </header>
       <div className="app-layout">
-        <aside className="sidebar">
-          <div className="eyebrow">YOUR WORKSPACE</div>
+        <aside className="sidebar" aria-label="Projects">
           <div className="section-head">
             <h2>
               Projects <span className="count">{rows.length}</span>
@@ -240,47 +246,41 @@ export function App() {
                   className={`project-row ${project?.id === row.id ? "selected" : ""}`}
                   key={row.id}
                   disabled={busy}
+                  aria-current={project?.id === row.id ? "true" : undefined}
                   onClick={() => void open(row.id)}
                 >
-                  <span className="project-symbol">
+                  <span className="project-symbol" aria-hidden="true">
                     {row.name[0].toUpperCase()}
                   </span>
                   <span>
                     <strong>{row.name}</strong>
-                    <small>{row.customer || "No customer added"}</small>
+                    {row.customer && <small>{row.customer}</small>}
                   </span>
-                  <span className="row-arrow">›</span>
+                  <span className="row-arrow" aria-hidden="true">
+                    ›
+                  </span>
                 </button>
               ))}
               {!filtered.length && (
                 <p className="muted sidebar-empty">
                   {search
                     ? "No matching projects."
-                    : "Your projects will appear here."}
+                    : archived
+                      ? "No archived projects."
+                      : "No projects yet."}
                 </p>
               )}
             </div>
           )}
-          <div className="sidebar-note">
-            <span className="eyebrow">A CLEARER PICTURE</span>
-            <p>
-              Plan your cash flows.
-              <br />
-              Understand your FX exposure.
-            </p>
-          </div>
         </aside>
         <main id="main" className="main-content" tabIndex={-1}>
           <div className="page-heading">
-            <div className="eyebrow">PROJECT CASH FLOWS</div>
-            <h1>Every bid. A clearer view.</h1>
-            <p className="muted">
-              Know what comes in, what goes out, and what the exchange rate
-              changes.
-            </p>
+            <h1>Project workspace</h1>
           </div>
           <div className="source-strip">
-            <span className="source-icon">↔</span>
+            <span className="source-icon" aria-hidden="true">
+              ↔
+            </span>
             <div>
               <strong>
                 {fx?.rate
@@ -291,7 +291,9 @@ export function App() {
                 {fx?.observation_date
                   ? `Observed ${fx.observation_date} · ${fx.source}`
                   : "You can still add projects and try hypothetical rates."}
-                {rateAge >= 4 ? ` · Reference rate is ${rateAge} days old.` : ""}
+                {rateAge >= 4
+                  ? ` · Reference rate is ${rateAge} days old.`
+                  : ""}
                 {lastRun?.status === "failed"
                   ? " · Latest update failed; last successful rate retained."
                   : ""}
@@ -324,27 +326,23 @@ export function App() {
           )}
           {!project ? (
             <section className="panel empty-state">
-              <span className="empty-icon">↗</span>
-              <h2>Start with a project</h2>
+              <h2>
+                {rows.length ? "Select a project" : "Start with a project"}
+              </h2>
               <p>
-                Add a project and its incoming and outgoing amounts.
-                <br />
-                Then explore what happens when the dollar moves.
+                {rows.length
+                  ? "Choose a project from the list to review its cash flows and exchange rate scenarios."
+                  : "Add a project to track its planned cash flows and estimate profit in PHP."}
               </p>
-              <button onClick={() => setCreating(true)}>
-                + Add your first project
-              </button>
-              <span className="fine-print">
-                PHP & USD · Planned cash flows · Simple FX simulation
-              </span>
+              {!rows.length && (
+                <button onClick={() => setCreating(true)}>Add a project</button>
+              )}
             </section>
           ) : (
             <>
               <div className="project-heading">
                 <div>
-                  <div className="eyebrow">
-                    {project.archived ? "ARCHIVED PROJECT" : "SELECTED PROJECT"}
-                  </div>
+                  {project.archived && <span className="pill">Archived</span>}
                   <h2>{project.name}</h2>
                   {project.customer && (
                     <p className="muted">{project.customer}</p>
@@ -392,23 +390,19 @@ export function App() {
                       ] as const
                     ).map(([label, value, icon], i) => (
                       <div
-                        className={`metric-card ${i === 2 ? "profit-card" : ""}`}
+                        className={`metric-card ${i === 2 ? "profit-card" : ""} ${value?.startsWith("-") ? "is-loss" : ""}`}
                         key={label}
                       >
                         <span className="metric-label">
                           {label}
-                          <span>{icon}</span>
+                          <span aria-hidden="true">{icon}</span>
                         </span>
-                        <strong
-                          className={value?.startsWith("-") ? "negative" : ""}
-                        >
-                          {currency(value)}
+                        <strong className="metric-value">
+                          {value !== null && (
+                            <span className="metric-unit">PHP </span>
+                          )}
+                          {currency(value, "").trim()}
                         </strong>
-                        <small>
-                          {i === 2
-                            ? "Incoming minus outgoing"
-                            : "At the reference exchange rate"}
-                        </small>
                       </div>
                     ))}
                   </div>
@@ -495,10 +489,7 @@ export function App() {
             </>
           )}
           <footer>
-            Built around one question: how does FX affect this project?
-            <span>
-              Reference rates are estimates, not bank execution rates.
-            </span>
+            Reference rates are indicative. Your bank’s rate may differ.
           </footer>
         </main>
       </div>
