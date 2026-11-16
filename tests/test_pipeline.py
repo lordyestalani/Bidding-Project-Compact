@@ -25,12 +25,16 @@ def response(rate="58", body=None):
 def test_duplicate_runs_and_corrections_preserve_raw_provenance(database):
     fetch = lambda start, end: [response()]
     first = run(date(2026, 10, 30), date(2026, 11, 1), database, fetch=fetch)
-    run(date(2026, 10, 30), date(2026, 11, 1), database, fetch=fetch)
+    repeat = run(date(2026, 10, 30), date(2026, 11, 1), database, fetch=fetch)
     with psycopg.connect(database) as conn:
         assert (
             conn.execute("SELECT count(*) FROM analytics.fx_rates").fetchone()[0] == 1
         )
         assert conn.execute("SELECT count(*) FROM raw.responses").fetchone()[0] == 2
+        assert str(conn.execute("SELECT run_id FROM analytics.fx_rates").fetchone()[0]) == first
+        assert conn.execute(
+            "SELECT published_count FROM ops.runs WHERE id=%s", (repeat,)
+        ).fetchone()[0] == 0
     correction = run(
         date(2026, 10, 30),
         date(2026, 11, 1),

@@ -137,7 +137,15 @@ def run(
                     SELECT observation_date,rate,run_id,response_id,fetched_at FROM raw.observations WHERE run_id=%s
                     ON CONFLICT(observation_date) DO UPDATE SET rate=excluded.rate,run_id=excluded.run_id,
                         response_id=excluded.response_id,fetched_at=excluded.fetched_at
-                    WHERE excluded.fetched_at >= analytics.fx_rates.fetched_at""",
+                    WHERE excluded.rate IS DISTINCT FROM analytics.fx_rates.rate
+                      AND excluded.fetched_at >= analytics.fx_rates.fetched_at
+                      AND NOT EXISTS (
+                          SELECT 1 FROM raw.observations prior
+                          JOIN ops.runs r ON r.id = prior.run_id
+                          WHERE prior.observation_date = excluded.observation_date
+                            AND prior.fetched_at > excluded.fetched_at
+                            AND r.status = 'success'
+                      )""",
                     (run_id,),
                 )
                 conn.execute(
