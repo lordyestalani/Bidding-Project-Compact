@@ -45,7 +45,10 @@ def create_app(database_url: str | None = None) -> FastAPI:
     @app.get("/api/health")
     def health():
         with connection() as conn:
-            conn.execute("SELECT 1").fetchone()
+            conn.execute(
+                """SELECT 1 FROM analytics.project_estimates
+                   CROSS JOIN analytics.fx_rates CROSS JOIN ops.runs LIMIT 0"""
+            )
         return {"status": "ready"}
 
     @app.get("/api/fx")
