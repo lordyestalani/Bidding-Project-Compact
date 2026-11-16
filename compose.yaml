@@ -59,7 +59,7 @@ services:
       test: [CMD, wget, -q, -T, '3', -O, /dev/null, http://127.0.0.1/api/health]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 3
 
   tests:
     image: bidding-simple-tests:local
