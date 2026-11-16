@@ -44,6 +44,12 @@ export type ScenarioResult = {
   project_version: number;
 };
 
+export class RequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -53,24 +59,29 @@ export async function request<T>(
     headers: { "Content-Type": "application/json", ...options.headers },
   });
   const value = await response.json().catch((error: unknown) => {
-    if (!response.ok && error instanceof SyntaxError) {
-      throw new Error(`Request failed (HTTP ${response.status}). Please try again.`);
+    if (error instanceof SyntaxError) {
+      throw new RequestError(
+        response.ok
+          ? "The server returned an unexpected response. Please try again."
+          : `Request failed (HTTP ${response.status}). Please try again.`,
+        response.status,
+      );
     }
     throw error;
   });
   if (!response.ok) {
     const detail = value?.detail;
-    throw new Error(
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail
-              .map(
-                (item: { loc: string[]; msg: string }) =>
-                  `${item.loc.slice(1).join(".")}: ${item.msg}`,
-              )
-              .join(" · ")
-          : "Request failed. Please try again.",
+    const messages = Array.isArray(detail)
+      ? detail.flatMap((item) =>
+          typeof item?.msg === "string" && Array.isArray(item.loc)
+            ? [`${item.loc.slice(1).join(".")}: ${item.msg}`]
+            : [],
+        )
+      : [];
+    throw new RequestError(
+      (typeof detail === "string" ? detail : messages.join(" · ")) ||
+        "Request failed. Please try again.",
+      response.status,
     );
   }
   return value as T;

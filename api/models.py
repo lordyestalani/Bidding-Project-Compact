@@ -12,12 +12,12 @@ class StrictModel(BaseModel):
 
 
 class ProjectCreate(StrictModel):
-    name: str = Field(min_length=1, max_length=200)
+    name: str = Field(min_length=1, max_length=200, pattern=r"^[^\x00]*$")
     request_id: UUID
 
 
 class CashFlow(StrictModel):
-    label: str = Field(min_length=1, max_length=200)
+    label: str = Field(min_length=1, max_length=200, pattern=r"^[^\x00]*$")
     direction: Literal["incoming", "outgoing"]
     currency: Literal["PHP", "USD"]
     amount: str | None
@@ -32,9 +32,9 @@ class CashFlow(StrictModel):
 
 
 class ProjectSave(StrictModel):
-    name: str = Field(min_length=1, max_length=200)
-    customer: str = Field(default="", max_length=200)
-    notes: str = Field(default="", max_length=2000)
+    name: str = Field(min_length=1, max_length=200, pattern=r"^[^\x00]*$")
+    customer: str = Field(default="", max_length=200, pattern=r"^[^\x00]*$")
+    notes: str = Field(default="", max_length=2000, pattern=r"^[^\x00]*$")
     archived: bool = False
     version: int = Field(ge=1)
     lines: list[CashFlow] = Field(max_length=200)
