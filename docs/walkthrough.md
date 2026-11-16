@@ -53,7 +53,7 @@ FX exposure  = incoming USD amounts − outgoing USD amounts
 ```
 
 Missing amounts are unknown, never silently zero. A PHP-only project needs no FX
-rate. Products and sums remain exact before the final four-place API rounding.
+rate. The API returns products and sums as exact decimal strings.
 
 ## 4. Simulate without changing facts
 
@@ -74,7 +74,7 @@ The chart polls the local published data every minute while visible. It uses the
 current budget throughout; it does not reconstruct old versions or store profit
 snapshots. Source update failures keep the last chart with an explicit warning.
 Observation-table profits use the same two-decimal display as the other cards;
-API values retain four decimal places. A newly published reference rate refreshes
+API values preserve the precision of the calculation. A newly published reference rate refreshes
 the project and resets the scenario to that reference rate.
 
 ## Three examples you can explain by hand

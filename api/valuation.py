@@ -1,7 +1,7 @@
 """Exact budget arithmetic. Rates are always PHP per one USD."""
 
 import re
-from decimal import Decimal, ROUND_HALF_UP, localcontext
+from decimal import Decimal, localcontext
 
 
 def parse_decimal(value: str, *, places: int, positive: bool = False) -> Decimal:
@@ -18,10 +18,8 @@ def parse_decimal(value: str, *, places: int, positive: bool = False) -> Decimal
 
 
 def money(value: Decimal) -> str:
-    with localcontext() as context:
-        context.prec = 50
-        rounded = value.quantize(Decimal(".0001"), rounding=ROUND_HALF_UP)
-        return format(abs(rounded) if rounded == 0 else rounded, ".4f")
+    whole, _, fraction = format(abs(value) if value == 0 else value, "f").partition(".")
+    return f"{whole}.{fraction.rstrip('0').ljust(4, '0')}"
 
 
 def metrics(

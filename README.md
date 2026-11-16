@@ -25,7 +25,7 @@ The chart revalues **today's saved cash flows** using the last 90 days of publis
 FX observations. It is not a record of past project profit. It refreshes every
 minute while visible; the source feed updates daily. Hover for date/rate/profit
 details or open View observations for the data table. Profits display in cents;
-the API retains four decimal places. More history can be
+the API returns exact decimal strings. More history can be
 loaded with the same pipeline command using an earlier start date.
 
 ## Screenshots

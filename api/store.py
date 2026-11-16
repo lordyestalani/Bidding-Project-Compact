@@ -4,6 +4,8 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
+from api.valuation import money
+
 
 def latest_rate(conn):
     return conn.execute(
@@ -58,7 +60,7 @@ def get_project(conn, project_id):
     ).fetchone()
     for field in ("incoming_php", "outgoing_php", "profit_php", "net_usd"):
         if value[field] is not None:
-            value[field] = format(value[field], ".4f")
+            value[field] = money(value[field])
     return project | {"lines": lines, "metrics": value, "fx": rate}
 
 

@@ -9,8 +9,8 @@ with rate as (
     from {{ ref('project_totals') }} t left join rate r on true
 )
 select *,
-    case when available then round(in_php + in_usd * coalesce(rate, 0), 4) end as incoming_php,
-    case when available then round(out_php + out_usd * coalesce(rate, 0), 4) end as outgoing_php,
-    case when available then round(in_php - out_php + (in_usd - out_usd) * coalesce(rate, 0), 4) end as profit_php,
+    case when available then in_php + in_usd * coalesce(rate, 0) end as incoming_php,
+    case when available then out_php + out_usd * coalesce(rate, 0) end as outgoing_php,
+    case when available then in_php - out_php + (in_usd - out_usd) * coalesce(rate, 0) end as profit_php,
     case when complete then in_usd - out_usd end as net_usd
 from values

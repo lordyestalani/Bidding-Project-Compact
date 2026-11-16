@@ -64,8 +64,11 @@ def test_decimal_strings_and_precision():
         parse_decimal(58.1, places=8)
     with pytest.raises(ValueError):
         parse_decimal("0", places=8, positive=True)
-    assert money(D("-1.23445")) == "-1.2345"
-    assert money(D("-0.0000001")) == "0.0000"
+    assert money(D("-1.23445")) == "-1.23445"
+    assert money(D("-0.0000001")) == "-0.0000001"
+    assert metrics(D(0), D("0.0001"), D(0), D(0), True, D("49.5"))[
+        "profit_php"
+    ] == "0.00495"
     # Two tiny USD amounts are aggregated before rounding, not rounded per line.
     assert (
         metrics(D("0"), D("0.0002"), D("0"), D("0"), True, D("0.3"))["profit_php"]
