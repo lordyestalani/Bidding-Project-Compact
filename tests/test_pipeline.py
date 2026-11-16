@@ -93,3 +93,14 @@ def test_invalid_source_body_is_retained(database):
         assert (
             conn.execute("SELECT count(*) FROM analytics.fx_rates").fetchone()[0] == 0
         )
+
+
+def test_dbt_rejects_candidate_after_requested_window(database, monkeypatch):
+    monkeypatch.setattr(
+        "pipeline.run.parse_rates",
+        lambda *args, **kwargs: [(date(2026, 10, 30), 58), (date(2026, 11, 2), 59)],
+    )
+    with pytest.raises(RuntimeError, match="dbt checks failed"):
+        run(date(2026, 10, 30), date(2026, 11, 1), database, fetch=lambda *args: [response()])
+    with psycopg.connect(database) as conn:
+        assert conn.execute("SELECT count(*) FROM analytics.fx_rates").fetchone()[0] == 0
