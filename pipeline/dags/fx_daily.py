@@ -7,7 +7,7 @@ import pendulum
 from airflow.sdk import DAG, task, get_current_context
 from airflow.timetables.interval import CronDataIntervalTimetable
 
-from pipeline.schedule import previous_day
+from pipeline.schedule import daily_fx_window
 
 with DAG(
     dag_id="fx_daily",
@@ -26,16 +26,16 @@ with DAG(
 
     @task
     def update_fx():
-        day = previous_day(get_current_context()["data_interval_end"])
+        start, end = daily_fx_window(get_current_context()["data_interval_end"])
         subprocess.run(
             [
                 "/opt/pipeline-env/bin/python",
                 "-m",
                 "pipeline.run",
                 "--start",
-                str(day),
+                str(start),
                 "--end",
-                str(day),
+                str(end),
             ],
             check=True,
         )

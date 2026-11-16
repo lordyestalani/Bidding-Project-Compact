@@ -28,7 +28,8 @@ candidates remain available for tracing corrections.
 A failed fetch, parse, or dbt check records a failed run and keeps the previous
 published rates. There is no separate batch manifest or historical restatement
 system. `pipeline/dags/fx_daily.py` schedules this same path at 08:00 Manila time.
-`pipeline/schedule.py` selects the preceding calendar day.
+`pipeline/schedule.py` selects the last 90 completed Manila calendar days so the
+next successful run can fill missing observations inside the chart window.
 
 ## 3. Turn projects into useful results
 

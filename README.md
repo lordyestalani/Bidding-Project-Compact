@@ -178,9 +178,10 @@ flowchart LR
     Airflow -. validates and publishes .-> DBT
 ```
 
-The daily DAG runs at **08:00 Asia/Manila** for the preceding calendar day, with
-two retries. The historical command above uses exactly the same pipeline. It
-accepts up to 367 inclusive days per invocation.
+The daily DAG runs at **08:00 Asia/Manila**, with two retries. Each run fetches
+the last 90 completed Manila calendar days so the chart can recover gaps after
+downtime. Use the manual backfill command for older dates. It accepts up to 367
+inclusive days per invocation.
 
 Raw responses keep the request URL, timestamp, checksum, and body. Candidate
 rates are checked before a transaction publishes them. Identical reruns do not
