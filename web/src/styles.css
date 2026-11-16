@@ -260,6 +260,7 @@ textarea {
 }
 .project-row {
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: 32px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
@@ -566,7 +567,7 @@ td:last-child {
   gap: 8px;
 }
 .rate-input input {
-  width: min(190px, 100%);
+  width: 190px;
   padding: 6px 9px;
   font-size: 20px;
   line-height: 1.2;
@@ -815,6 +816,33 @@ footer {
   .panel,
   .simulation {
     padding: 15px;
+  }
+  .flows table {
+    table-layout: fixed;
+    white-space: normal;
+    font-size: 11px;
+  }
+  .flows th,
+  .flows td {
+    padding-right: 5px;
+    overflow-wrap: anywhere;
+  }
+  .flows th:first-child {
+    width: 28%;
+  }
+  .flows th:nth-child(2) {
+    width: 22%;
+  }
+  .flows th:nth-child(3) {
+    width: 18%;
+  }
+  .flows th:last-child,
+  .flows td:last-child {
+    padding-right: 0;
+  }
+  .flows .direction {
+    font-size: inherit;
+    padding-inline: 3px;
   }
   .field-grid {
     grid-template-columns: 1fr;

@@ -250,7 +250,7 @@ export function App() {
                   onClick={() => void open(row.id)}
                 >
                   <span className="project-symbol" aria-hidden="true">
-                    {row.name[0].toUpperCase()}
+                    {row.name.match(/[\p{L}\p{N}]/u)?.[0].toUpperCase() ?? "•"}
                   </span>
                   <span>
                     <strong>{row.name}</strong>
