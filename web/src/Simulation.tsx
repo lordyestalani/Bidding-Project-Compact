@@ -16,7 +16,8 @@ export function Simulation({
   onReferenceChange?: () => void;
 }) {
   const initial = referenceRate ?? "55";
-  const [rate, setRate] = useState(initial);
+  const [customRate, setCustomRate] = useState<string | null>(null);
+  const rate = customRate ?? initial;
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,7 @@ export function Simulation({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [rate, projectId, version, valid]);
+  }, [rate, projectId, version, valid, referenceRate]);
 
   return (
     <>
@@ -94,7 +95,7 @@ export function Simulation({
                 value={rate}
                 aria-invalid={!valid}
                 onChange={(e) => {
-                  setRate(e.target.value);
+                  setCustomRate(e.target.value);
                   setResult(null);
                 }}
               />
@@ -105,9 +106,9 @@ export function Simulation({
             className="secondary"
             onClick={() => {
               if (rate !== initial) {
-                setRate(initial);
                 setResult(null);
               }
+              setCustomRate(null);
             }}
           >
             Reset
@@ -122,7 +123,7 @@ export function Simulation({
           step="any"
           value={valid ? Number(rate) : anchor}
           onChange={(e) => {
-            setRate(Number(e.target.value).toFixed(4));
+            setCustomRate(Number(e.target.value).toFixed(4));
             setResult(null);
           }}
         />

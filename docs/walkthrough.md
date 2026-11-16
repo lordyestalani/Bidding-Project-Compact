@@ -74,8 +74,8 @@ The chart polls the local published data every minute while visible. It uses the
 current budget throughout; it does not reconstruct old versions or store profit
 snapshots. Source update failures keep the last chart with an explicit warning.
 Observation-table profits use the same two-decimal display as the other cards;
-API values preserve the precision of the calculation. A newly published reference rate refreshes
-the project and resets the scenario to that reference rate.
+API values preserve the precision of the calculation. A new reference rate
+refreshes the project and comparison while preserving a custom scenario rate.
 
 ## Three examples you can explain by hand
 

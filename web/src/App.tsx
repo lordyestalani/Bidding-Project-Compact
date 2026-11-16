@@ -67,9 +67,30 @@ export function App() {
     };
   }, [archived, listVersion]);
   useEffect(() => {
-    request<FX>("/fx")
-      .then(setWorkspaceFx)
-      .catch((reason) => setError(reason.message));
+    let active = true;
+    let pending = false;
+    const controller = new AbortController();
+    async function refreshFx(initial = false) {
+      if (pending) return;
+      pending = true;
+      try {
+        const value = await request<FX>("/fx", { signal: controller.signal });
+        if (active) setWorkspaceFx(value);
+      } catch (reason) {
+        if (active && initial) setError((reason as Error).message);
+      } finally {
+        pending = false;
+      }
+    }
+    void refreshFx(true);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshFx();
+    }, 60_000);
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(timer);
+    };
   }, []);
   async function open(id: string) {
     if (busy || !canLeave()) return;
@@ -136,6 +157,12 @@ export function App() {
     }
   }
   const rateAge = fx?.observation_date ? observationAge(fx.observation_date) : 0;
+  const projectRun = project?.fx.last_run;
+  const workspaceRun = workspaceFx?.last_run;
+  const lastRun =
+    workspaceRun && (!projectRun || workspaceRun.started_at >= projectRun.started_at)
+      ? workspaceRun
+      : projectRun;
   const filtered = rows.filter((row) =>
     `${row.name} ${row.customer}`.toLowerCase().includes(search.toLowerCase()),
   );
@@ -265,7 +292,7 @@ export function App() {
                   ? `Observed ${fx.observation_date} · ${fx.source}`
                   : "You can still add projects and try hypothetical rates."}
                 {rateAge >= 4 ? ` · Reference rate is ${rateAge} days old.` : ""}
-                {fx?.last_run?.status === "failed"
+                {lastRun?.status === "failed"
                   ? " · Latest update failed; last successful rate retained."
                   : ""}
               </span>
@@ -400,9 +427,7 @@ export function App() {
                       </p>
                     )}
                   <Simulation
-                    key={
-                      project.id + ":" + project.version + ":" + project.fx.rate
-                    }
+                    key={project.id + ":" + project.version}
                     projectId={project.id}
                     version={project.version}
                     referenceRate={project.fx.rate}
