@@ -13,6 +13,7 @@ x-pipeline: &pipeline
 
 services:
   postgres:
+    restart: unless-stopped
     image: postgres:17.11-bookworm
     environment:
       POSTGRES_USER: bidding
@@ -33,6 +34,7 @@ services:
     profiles: [tools]
 
   api:
+    restart: unless-stopped
     image: bidding-simple-api:local
     build: {context: ., dockerfile: docker/api.Dockerfile}
     environment:
@@ -47,6 +49,7 @@ services:
       retries: 20
 
   web:
+    restart: unless-stopped
     image: bidding-simple-web:local
     build: {context: ., dockerfile: docker/web.Dockerfile}
     depends_on:
@@ -90,6 +93,7 @@ services:
 
   airflow:
     <<: *pipeline
+    restart: unless-stopped
     environment:
       <<: *pipeline-env
       AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:?Run Start.ps1}
