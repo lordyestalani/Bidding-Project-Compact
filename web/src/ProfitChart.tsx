@@ -92,9 +92,9 @@ export function ProfitChart({
   }, [projectId, version, referenceRate, referenceDate]);
 
   const points = data?.points ?? [];
-  const W = 720,
-    H = 245,
-    L = 100,
+  const W = 760,
+    H = 238,
+    L = 91,
     R = 18,
     T = 18,
     B = 35;
@@ -125,6 +125,9 @@ export function ProfitChart({
     .join(" ");
   const zero = y(0),
     latest = points[points.length - 1];
+  const area = latest
+    ? `${path} L${x(latest)},${zero} L${x(points[0])},${zero} Z`
+    : "";
   const inspected =
     points[
       selected === null
@@ -146,10 +149,7 @@ export function ProfitChart({
   return (
     <section className="profit-history" aria-labelledby={`${chartId}-title`}>
       <div className="section-head">
-        <div>
-          <div className="eyebrow">FX OVER TIME</div>
-          <h2 id={`${chartId}-title`}>Profit & loss across FX rates</h2>
-        </div>
+        <h2 id={`${chartId}-title`}>Profit & loss across FX rates</h2>
         <button
           className="text-button"
           disabled={loading}
@@ -255,7 +255,7 @@ export function ProfitChart({
                 y={zero}
                 width={W - L - R}
                 height={Math.max(0, H - B - zero)}
-                fill="#fcf2ee"
+                className="chart-loss-zone"
               />
               {[min, max].map((value) => (
                 <g key={value}>
@@ -292,6 +292,16 @@ export function ProfitChart({
               >
                 0
               </text>
+              <path
+                d={area}
+                className="chart-profit-fill"
+                clipPath={`url(#${chartId}-positive)`}
+              />
+              <path
+                d={area}
+                className="chart-loss-fill"
+                clipPath={`url(#${chartId}-negative)`}
+              />
               {scenario !== null && (
                 <line
                   data-testid="scenario-chart-line"
@@ -304,35 +314,36 @@ export function ProfitChart({
               )}
               <path
                 d={path}
-                fill="none"
-                stroke="#38724e"
-                strokeWidth="2.5"
+                className="chart-profit-line"
                 clipPath={`url(#${chartId}-positive)`}
               />
               <path
                 d={path}
-                fill="none"
-                stroke="#b84d3b"
-                strokeWidth="2.5"
+                className="chart-loss-line"
                 clipPath={`url(#${chartId}-negative)`}
               />
               <circle
                 cx={x(latest)}
                 cy={y(Number(latest.profit_php))}
                 r="4.5"
-                fill="#f5d64b"
-                stroke="#736528"
-                strokeWidth="1.5"
+                className="chart-latest-point"
               />
               {inspected && selected !== null && (
-                <circle
-                  cx={x(inspected)}
-                  cy={y(Number(inspected.profit_php))}
-                  r="4"
-                  fill="white"
-                  stroke="#334e3a"
-                  strokeWidth="2"
-                />
+                <g>
+                  <line
+                    className="chart-guide"
+                    x1={x(inspected)}
+                    x2={x(inspected)}
+                    y1={T}
+                    y2={H - B}
+                  />
+                  <circle
+                    cx={x(inspected)}
+                    cy={y(Number(inspected.profit_php))}
+                    r="4"
+                    className="chart-hover-point"
+                  />
+                </g>
               )}
               <text className="chart-label" x={L} y={H - 8}>
                 {dateLabel(points[0].observation_date)}
