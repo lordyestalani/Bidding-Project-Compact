@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  full-stack:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: bidding-ci
+      POSTGRES_PASSWORD: ci-only-password
+      AIRFLOW_PASSWORD: unused-ci-password
+      AIRFLOW_JWT_SECRET: unused-ci-jwt-secret
+      AIRFLOW_FERNET_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Run PostgreSQL, dbt, frontend, and browser tests
+        shell: pwsh
+        run: ./Test.ps1 -Browser
+      - name: Audit production npm dependencies
+        working-directory: web
+        run: npm audit --omit=dev
+      - name: Remove isolated test services and database
+        if: always()
+        run: docker compose --profile tests down --volumes
