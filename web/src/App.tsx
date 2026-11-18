@@ -45,6 +45,9 @@ export function App() {
   const [listVersion, setListVersion] = useState(0);
   const [portfolioRate, setPortfolioRate] = useState<string | null>(null);
   const [portfolioRevision, setPortfolioRevision] = useState(0);
+  const refreshPortfolio = useCallback(() => {
+    setPortfolioRevision((revision) => revision + 1);
+  }, []);
   const portfolio = usePortfolio(!project, portfolioRate, portfolioRevision);
   const fx = project?.fx ?? {
     rate: portfolio.data?.reference_rate,
@@ -103,7 +106,7 @@ export function App() {
     void refreshFx(true);
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") {
-        setPortfolioRevision((revision) => revision + 1);
+        refreshPortfolio();
         void refreshFx();
       }
     }, 60_000);
@@ -112,7 +115,7 @@ export function App() {
       controller.abort();
       window.clearInterval(timer);
     };
-  }, []);
+  }, [refreshPortfolio]);
   async function open(id: string, focusHeading = true) {
     if (busy || !canLeave()) return;
     const current = ++ticket.current;
@@ -347,7 +350,7 @@ export function App() {
                 setError("");
                 if (project) void open(project.id, false);
                 else {
-                  setPortfolioRevision((revision) => revision + 1);
+                  refreshPortfolio();
                   void request<FX>("/fx")
                     .then(setWorkspaceFx)
                     .catch((reason) => setError(reason.message));
@@ -374,6 +377,7 @@ export function App() {
               onRateChange={setPortfolioRate}
               onOpenProject={open}
               onAddProject={() => setCreating(true)}
+              onRetry={refreshPortfolio}
               busy={busy}
             />
           ) : (

@@ -86,6 +86,7 @@ export function PortfolioDashboard({
   onRateChange,
   onOpenProject,
   onAddProject,
+  onRetry,
   busy,
 }: {
   portfolio: ReturnType<typeof usePortfolio>;
@@ -93,25 +94,37 @@ export function PortfolioDashboard({
   onRateChange: (rate: string | null) => void;
   onOpenProject: (id: string) => void;
   onAddProject: () => void;
+  onRetry: () => void;
   busy: boolean;
 }) {
-
+  const loadError = error && (
+    <div className="notice portfolio-error">
+      <span role="status">
+        {error}
+        {data && " Showing the last available results."}
+      </span>
+      <button className="secondary" onClick={onRetry} disabled={!valid || loading}>
+        Retry portfolio
+      </button>
+    </div>
+  );
   if (!data) {
     return (
-      <p className={error ? "notice" : "muted"} role="status">
-        {error || "Loading portfolio…"}
-      </p>
+      loadError || <p className="muted" role="status">Loading portfolio…</p>
     );
   }
   if (!data.projects.length) {
     return (
-      <section className="panel empty-state">
-        <h2>No active projects</h2>
-        <p>Add a project with planned cash flows to see its FX impact here.</p>
-        <button disabled={busy} onClick={onAddProject}>
-          Add a project
-        </button>
-      </section>
+      <>
+        {loadError}
+        <section className="panel empty-state">
+          <h2>No active projects</h2>
+          <p>Add a project with planned cash flows to see its FX impact here.</p>
+          <button disabled={busy} onClick={onAddProject}>
+            Add a project
+          </button>
+        </section>
+      </>
     );
   }
 
@@ -214,11 +227,7 @@ export function PortfolioDashboard({
             decimal.
           </p>
         )}
-        {error && (
-          <p className="notice" role="status">
-            {error} Showing the last available results.
-          </p>
-        )}
+        {loadError}
         <p className="portfolio-results-rate muted">
           Results at {data.scenario_rate} PHP/USD
           {valid && loading && <span role="status"> · Updating…</span>}

@@ -77,6 +77,26 @@ test("explains when portfolio totals cover different projects", async () => {
   expect(screen.getByText("No comparison")).toBeVisible();
 });
 
+test("retries a failed portfolio load even when FX status is unavailable", async () => {
+  let attempts = 0;
+  vi.stubGlobal("fetch", vi.fn(async (url) => {
+    if (url === "/api/fx") {
+      return Response.json({ detail: "FX status offline" }, { status: 503 });
+    }
+    if (url === "/api/portfolio") {
+      return ++attempts === 1
+        ? Response.json({ detail: "Portfolio offline" }, { status: 503 })
+        : Response.json({ projects: [] });
+    }
+    return Response.json([]);
+  }));
+  render(<App />);
+  expect(await screen.findByText("Portfolio offline")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Retry portfolio" }));
+  expect(await screen.findByRole("heading", { name: "No active projects" })).toBeVisible();
+  expect(attempts).toBe(2);
+});
+
 test.each([
   [502, "<html><h1>Bad Gateway</h1></html>", "Request failed (HTTP 502). Please try again."],
   [200, "<html>Unexpected page</html>", "The server returned an unexpected response. Please try again."],
