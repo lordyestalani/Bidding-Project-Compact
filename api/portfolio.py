@@ -57,6 +57,7 @@ def portfolio(conn, rate: Decimal | None):
     return {
         "reference_rate": format(reference_rate, ".8f") if reference else None,
         "reference_date": reference["observation_date"] if reference else None,
+        "reference_source": reference["source"] if reference else None,
         "scenario_rate": format(scenario_rate, "f"),
         "incomplete_count": sum(not project["complete"] for project in projects),
         "totals": {

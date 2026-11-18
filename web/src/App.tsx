@@ -7,7 +7,7 @@ import {
   type ProjectRow,
 } from "./api";
 import { ProjectEditor } from "./ProjectEditor";
-import { PortfolioDashboard } from "./PortfolioDashboard";
+import { PortfolioDashboard, usePortfolio } from "./PortfolioDashboard";
 import { Simulation } from "./Simulation";
 
 const manilaDate = new Intl.DateTimeFormat("en-CA", {
@@ -34,7 +34,6 @@ export function App() {
   const [rows, setRows] = useState<ProjectRow[]>([]),
     [project, setProject] = useState<Project | null>(null),
     [workspaceFx, setWorkspaceFx] = useState<FX | null>(null);
-  const fx = project?.fx ?? workspaceFx;
   const [search, setSearch] = useState(""),
     [archived, setArchived] = useState(false),
     [name, setName] = useState(""),
@@ -45,6 +44,13 @@ export function App() {
     [loading, setLoading] = useState(true);
   const [listVersion, setListVersion] = useState(0);
   const [portfolioRate, setPortfolioRate] = useState<string | null>(null);
+  const [portfolioRevision, setPortfolioRevision] = useState(0);
+  const portfolio = usePortfolio(!project, portfolioRate, portfolioRevision);
+  const fx = project?.fx ?? {
+    rate: portfolio.data?.reference_rate,
+    observation_date: portfolio.data?.reference_date,
+    source: portfolio.data?.reference_source,
+  };
   const dirty = useRef(false),
     ticket = useRef(0),
     createKey = useRef(crypto.randomUUID());
@@ -88,7 +94,10 @@ export function App() {
     }
     void refreshFx(true);
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refreshFx();
+      if (document.visibilityState === "visible") {
+        setPortfolioRevision((revision) => revision + 1);
+        void refreshFx();
+      }
     }, 60_000);
     return () => {
       active = false;
@@ -306,7 +315,9 @@ export function App() {
               <strong>
                 {fx?.rate
                   ? `1 USD = ${Number(fx.rate).toFixed(4)} PHP`
-                  : "Reference rate not available yet"}
+                  : !project && !portfolio.data && !portfolio.error
+                    ? "Loading reference rate…"
+                    : "Reference rate not available yet"}
               </strong>
               <span>
                 {fx?.observation_date
@@ -326,10 +337,12 @@ export function App() {
               onClick={() => {
                 setError("");
                 if (project) void open(project.id);
-                else
+                else {
+                  setPortfolioRevision((revision) => revision + 1);
                   void request<FX>("/fx")
                     .then(setWorkspaceFx)
                     .catch((reason) => setError(reason.message));
+                }
               }}
             >
               Refresh
@@ -347,7 +360,7 @@ export function App() {
           )}
           {!project ? (
             <PortfolioDashboard
-              fx={workspaceFx}
+              portfolio={portfolio}
               rate={portfolioRate}
               onRateChange={setPortfolioRate}
               onOpenProject={open}

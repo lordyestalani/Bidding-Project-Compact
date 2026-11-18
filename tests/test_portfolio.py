@@ -41,6 +41,7 @@ def test_portfolio_uses_opposite_fx_exposures_and_excludes_incomplete_projects(
     result = response.json()
     assert result["reference_rate"] == "58.00000000"
     assert result["reference_date"] == today.isoformat()
+    assert result["reference_source"] == income["fx"]["source"]
     assert result["incomplete_count"] == 1
     assert result["totals"] == {
         "reference_php": {"php": "4180.0000", "projects": 3},

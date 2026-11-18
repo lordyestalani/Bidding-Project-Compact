@@ -33,7 +33,14 @@ test.each([
               source: "ECB",
               last_run: { status: "success" },
             }
-          : [],
+          : url === "/api/portfolio"
+            ? {
+                reference_rate: "58.00000000",
+                reference_date: date,
+                reference_source: "Portfolio FX",
+                projects: [],
+              }
+            : [],
       ),
     ),
   );
@@ -41,6 +48,8 @@ test.each([
   const source = await screen.findByText(/Observed/);
   const warning = `Reference rate is ${age} days old.`;
   expect(source).toHaveTextContent(`Observed ${date}`);
+  expect(source).toHaveTextContent("Portfolio FX");
+  expect(screen.getByText("1 USD = 58.0000 PHP")).toBeVisible();
   if (showsWarning) expect(source).toHaveTextContent(warning);
   else expect(source).not.toHaveTextContent(warning);
 });

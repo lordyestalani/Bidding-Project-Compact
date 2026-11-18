@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { currency, request, type FX } from "./api";
+import { currency, request } from "./api";
 import "./portfolio.css";
 
 type Values = {
@@ -11,6 +11,7 @@ type Values = {
 type Portfolio = {
   reference_rate: string | null;
   reference_date: string | null;
+  reference_source: string | null;
   scenario_rate: string;
   incomplete_count: number;
   totals: Record<keyof Values, { php: string | null; projects: number }>;
@@ -36,21 +37,7 @@ function impact(value: string | null) {
     : display;
 }
 
-export function PortfolioDashboard({
-  fx,
-  rate,
-  onRateChange,
-  onOpenProject,
-  onAddProject,
-  busy,
-}: {
-  fx: FX | null;
-  rate: string | null;
-  onRateChange: (rate: string | null) => void;
-  onOpenProject: (id: string) => void;
-  onAddProject: () => void;
-  busy: boolean;
-}) {
+export function usePortfolio(enabled: boolean, rate: string | null, revision: number) {
   const [data, setData] = useState<Portfolio | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,7 +46,7 @@ export function PortfolioDashboard({
     (/^[0-9]{1,12}(\.[0-9]{1,8})?$/.test(rate) && Number(rate) > 0);
 
   useEffect(() => {
-    if (!valid) return;
+    if (!enabled || !valid) return;
     const controller = new AbortController();
     setLoading(true);
     setError("");
@@ -88,7 +75,26 @@ export function PortfolioDashboard({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [rate, valid, fx]);
+  }, [enabled, rate, valid, revision]);
+
+  return { data, loading, error, valid };
+}
+
+export function PortfolioDashboard({
+  portfolio: { data, loading, error, valid },
+  rate,
+  onRateChange,
+  onOpenProject,
+  onAddProject,
+  busy,
+}: {
+  portfolio: ReturnType<typeof usePortfolio>;
+  rate: string | null;
+  onRateChange: (rate: string | null) => void;
+  onOpenProject: (id: string) => void;
+  onAddProject: () => void;
+  busy: boolean;
+}) {
 
   if (!data) {
     return (
