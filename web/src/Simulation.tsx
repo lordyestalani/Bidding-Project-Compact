@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { currency, request, type ScenarioResult } from "./api";
 import { ProfitChart } from "./ProfitChart";
+import { DEFAULT_SCENARIO_RATE, RateControl, rateSlider } from "./RateControl";
 
 export function Simulation({
   projectId,
@@ -15,20 +16,19 @@ export function Simulation({
   referenceDate?: string | null;
   onReferenceChange?: () => void;
 }) {
-  const initial = referenceRate ?? "55";
+  const initial = referenceRate ?? DEFAULT_SCENARIO_RATE;
   const [customRate, setCustomRate] = useState<string | null>(null);
   const rate = customRate ?? initial;
   const [result, setResult] = useState<ScenarioResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const valid = /^[0-9]{1,12}(\.[0-9]{1,8})?$/.test(rate) && Number(rate) > 0;
-  const anchor = Number(referenceRate ?? 55);
-  const sliderRate = valid ? Math.min(Number(rate), 999_999_999_999) : anchor;
-  const min = Math.max(0.00000001, Math.min(anchor * 0.7, sliderRate));
-  const max = Math.min(
-    999_999_999_999,
-    Math.max(anchor * 1.3, sliderRate, min + 0.00000001),
-  );
+  const slider = rateSlider(rate, referenceRate);
+  const { valid } = slider;
+
+  function updateRate(nextRate: string | null) {
+    if ((nextRate ?? initial) !== rate) setResult(null);
+    setCustomRate(nextRate);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,52 +78,7 @@ export function Simulation({
         <div className="section-head">
           <h2 id="simulation-title">Exchange rate scenario</h2>
         </div>
-        <div className="rate-control">
-          <div>
-            <label htmlFor="scenario-rate">Scenario rate</label>
-            <div className="rate-input">
-              <input
-                id="scenario-rate"
-                inputMode="decimal"
-                value={rate}
-                aria-invalid={!valid}
-                onChange={(e) => {
-                  setCustomRate(e.target.value);
-                  setResult(null);
-                }}
-              />
-              <span>PHP / USD</span>
-            </div>
-          </div>
-          <button
-            className="secondary"
-            onClick={() => {
-              if (rate !== initial) {
-                setResult(null);
-              }
-              setCustomRate(null);
-            }}
-          >
-            Reset
-          </button>
-        </div>
-        <input
-          className="slider"
-          type="range"
-          aria-label="Exchange rate slider"
-          min={min}
-          max={max}
-          step="any"
-          value={sliderRate}
-          onChange={(e) => {
-            setCustomRate(Number(e.target.value).toFixed(8));
-            setResult(null);
-          }}
-        />
-        <div className="slider-labels">
-          <span>Weaker dollar · {min.toFixed(2)}</span>
-          <span>Stronger dollar · {max.toFixed(2)}</span>
-        </div>
+        <RateControl rate={rate} slider={slider} onChange={updateRate} />
         {!referenceRate && (
           <p className="notice">
             No reference rate is available yet. This is a hypothetical rate you

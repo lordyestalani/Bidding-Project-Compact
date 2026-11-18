@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { currency, request } from "./api";
+import { isValidRate, RateControl, rateSlider } from "./RateControl";
 import "./portfolio.css";
 
 type Values = {
@@ -41,9 +42,7 @@ export function usePortfolio(enabled: boolean, rate: string | null, revision: nu
   const [data, setData] = useState<Portfolio | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const valid =
-    rate === null ||
-    (/^[0-9]{1,12}(\.[0-9]{1,8})?$/.test(rate) && Number(rate) > 0);
+  const valid = rate === null || isValidRate(rate);
 
   useEffect(() => {
     if (!enabled || !valid) return;
@@ -128,15 +127,9 @@ export function PortfolioDashboard({
     );
   }
 
-  const base = Number(data.reference_rate ?? 55);
   const current = rate ?? data.scenario_rate;
-  const sliderLimit = 999_999_999_999;
-  const sliderRate = valid ? Math.min(Number(current), sliderLimit) : base;
-  const min = Math.max(0.00000001, Math.min(base * 0.7, sliderRate));
-  const max = Math.min(
-    sliderLimit,
-    Math.max(base * 1.3, sliderRate, min + 0.00000001),
-  );
+  const slider = rateSlider(current, data.reference_rate);
+  const { anchor: base, min, max } = slider;
   const maxExposure = data.projects.reduce(
     (largest, project) => Math.max(largest, Math.abs(Number(project.net_usd))),
     0,
@@ -180,40 +173,12 @@ export function PortfolioDashboard({
           {data.reference_date && ` Observation: ${data.reference_date}.`}
         </p>
         <div className="portfolio-controls">
-          <div className="rate-control">
-            <div>
-              <label htmlFor="portfolio-rate">Portfolio scenario rate</label>
-              <div className="rate-input">
-                <input
-                  id="portfolio-rate"
-                  inputMode="decimal"
-                  value={current}
-                  aria-invalid={!valid}
-                  onChange={(event) => onRateChange(event.target.value)}
-                />
-                <span>PHP / USD</span>
-              </div>
-            </div>
-            <button className="secondary" onClick={() => onRateChange(null)}>
-              Reset
-            </button>
-          </div>
-          <input
-            aria-label="Portfolio exchange rate slider"
-            className="slider"
-            type="range"
-            min={min}
-            max={max}
-            step="any"
-            value={sliderRate}
-            onChange={(event) =>
-              onRateChange(Number(event.target.value).toFixed(8))
-            }
+          <RateControl
+            rate={current}
+            slider={slider}
+            onChange={onRateChange}
+            portfolio
           />
-          <div className="slider-labels">
-            <span>Weaker USD · {min.toFixed(2)}</span>
-            <span>Stronger USD · {max.toFixed(2)}</span>
-          </div>
         </div>
         {!data.reference_rate && (
           <p className="notice">
