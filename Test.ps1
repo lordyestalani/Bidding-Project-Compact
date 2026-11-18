@@ -10,6 +10,8 @@ try {
     docker compose --profile tests run --rm tests
     if ($LASTEXITCODE -ne 0) { throw 'Python/dbt tests failed.' }
     if ($Browser) {
+        docker compose build api web
+        if ($LASTEXITCODE -ne 0) { throw 'Browser test image build failed.' }
         docker compose --profile tests run --rm tests python -m tests.seed_browser
         if ($LASTEXITCODE -ne 0) { throw 'Browser fixture preparation failed.' }
         docker compose --profile tests up -d --wait test-api test-web
@@ -20,7 +22,9 @@ try {
             $npx = if ($IsWindows) { 'npx.cmd' } else { 'npx' }
             & $npm ci
             if ($LASTEXITCODE -ne 0) { throw 'Frontend test dependency install failed.' }
-            & $npx playwright install chromium
+            $playwrightArgs = @('playwright', 'install', 'chromium')
+            if ($IsLinux -and $env:CI -eq 'true') { $playwrightArgs += '--with-deps' }
+            & $npx @playwrightArgs
             if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
             & $npm test
             if ($LASTEXITCODE -ne 0) { throw 'Component tests failed.' }
