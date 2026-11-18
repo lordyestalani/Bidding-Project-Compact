@@ -29,31 +29,28 @@ def validate_window(start: date, end: date):
         raise ValueError("Future source intervals are not supported.")
 
 
-def fetch(start: date, end: date):
-    validate_window(start, end)
-    urls = [
-        f"{ROOT}/rates?base=USD&quotes=PHP&from={start}&to={end}",
-        f"{ROOT}/rate/USD/PHP?date={start}",
-    ]
-    for url in urls:
-        request = Request(
-            url,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": "BiddingFXPortfolio/1.0",
-            },
-        )
-        try:
-            with urlopen(request, timeout=20) as response:
-                yield SourceResponse(
-                    url, response.read(), datetime.now(timezone.utc), response.status
-                )
-        except HTTPError as error:
-            # Yield failure bodies so the caller persists them before validation.
-            yield SourceResponse(
-                url, error.read(), datetime.now(timezone.utc), error.code
+def fetch_range(start: date, end: date) -> SourceResponse:
+    return fetch(f"{ROOT}/rates?base=USD&quotes=PHP&from={start}&to={end}")
+
+
+def fetch_anchor(start: date) -> SourceResponse:
+    return fetch(f"{ROOT}/rate/USD/PHP?date={start}")
+
+
+def fetch(url: str) -> SourceResponse:
+    request = Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": "BiddingFXPortfolio/1.0"},
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            return SourceResponse(
+                url, response.read(), datetime.now(timezone.utc), response.status
             )
-            return
+    except HTTPError as error:
+        # Retain failure bodies so the caller can store them before validation.
+        with error:
+            return SourceResponse(url, error.read(), datetime.now(timezone.utc), error.code)
 
 
 def parse_rates(

@@ -13,7 +13,7 @@ from uuid import uuid4
 
 import psycopg
 
-from pipeline.source import fetch as source_fetch, parse_rates, validate_window
+from pipeline.source import SourceResponse, fetch_anchor, fetch_range, parse_rates, validate_window
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,13 +53,27 @@ def dbt(command: list[str], database_url: str):
         )
 
 
+def retain_response(conn, run_id, response: SourceResponse):
+    response_id = uuid4()
+    conn.execute(
+        "INSERT INTO raw.responses(id,run_id,url,fetched_at,status_code,checksum,body) VALUES(%s,%s,%s,%s,%s,%s,%s)",
+        (
+            response_id, run_id, response.url, response.fetched_at,
+            response.status_code, hashlib.sha256(response.body).hexdigest(), response.body,
+        ),
+    )
+    if response.status_code != 200:
+        raise ValueError("The FX source returned an unsuccessful HTTP response.")
+    return response_id
+
+
 def run(
     start: date,
     end: date,
     database_url: str | None = None,
     *,
-    fetch=source_fetch,
-    check=None
+    fetch=fetch_range,
+    check=None,
 ) -> str:
     validate_window(start, end)
     url = database_url or os.environ["DATABASE_URL"]
@@ -73,49 +87,21 @@ def run(
             (run_id, start, end),
         )
         try:
-            observations = {}
-            for response in fetch(start, end):
-                response_id = uuid4()
-                conn.execute(
-                    "INSERT INTO raw.responses(id,run_id,url,fetched_at,status_code,checksum,body) VALUES(%s,%s,%s,%s,%s,%s,%s)",
-                    (
-                        response_id,
-                        run_id,
-                        response.url,
-                        response.fetched_at,
-                        response.status_code,
-                        hashlib.sha256(response.body).hexdigest(),
-                        response.body,
-                    ),
-                )
-                if response.status_code != 200:
-                    raise ValueError(
-                        "The FX source returned an unsuccessful HTTP response."
-                    )
-                anchor = "/rate/" in response.url
-                rows = parse_rates(
-                    response.body,
-                    date(1999, 1, 4) if anchor else start,
-                    start if anchor else end,
-                    allow_empty=not anchor,
-                    allow_prior=not anchor,
-                )
-                for observed, rate in rows:
-                    if observed in observations and observations[observed][0] != rate:
-                        raise ValueError("Source responses disagree on a rate.")
-                    observations[observed] = (rate, response_id, response.fetched_at)
+            response = fetch(start, end)
+            response_id = retain_response(conn, run_id, response)
+            observations = parse_rates(response.body, start, end, allow_empty=True, allow_prior=True)
             if not observations:
-                raise ValueError("No source observations were fetched.")
+                response = fetch_anchor(start)
+                response_id = retain_response(conn, run_id, response)
+                observations = parse_rates(response.body, start, start, allow_prior=True)
+                if len(observations) != 1:
+                    raise ValueError("Expected one preceding anchor observation.")
             with conn.transaction(), conn.cursor() as cursor:
                 cursor.executemany(
                     "INSERT INTO raw.observations(run_id,response_id,observation_date,base,quote,rate,fetched_at) VALUES(%s,%s,%s,'USD','PHP',%s,%s)",
                     [
-                        (run_id, response_id, observed, rate, fetched_at)
-                        for observed, (
-                            rate,
-                            response_id,
-                            fetched_at,
-                        ) in observations.items()
+                        (run_id, response_id, observed, rate, response.fetched_at)
+                        for observed, rate in observations
                     ],
                 )
             if check is None:
