@@ -150,6 +150,13 @@ export function PortfolioDashboard({
           </div>
         ))}
       </section>
+      {data.totals.scenario_php.projects > data.totals.reference_php.projects && (
+        <p className="notice">
+          The scenario total includes more projects because their USD cash flows
+          need a published reference rate. Total FX impact includes only projects
+          valued at both rates.
+        </p>
+      )}
       <section
         className="panel portfolio-impact"
         aria-labelledby="portfolio-chart"

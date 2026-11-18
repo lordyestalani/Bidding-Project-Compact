@@ -54,6 +54,29 @@ test.each([
   else expect(source).not.toHaveTextContent(warning);
 });
 
+test("explains when portfolio totals cover different projects", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url) => Response.json(
+    url === "/api/portfolio" ? {
+      reference_rate: null,
+      reference_date: null,
+      scenario_rate: "55",
+      incomplete_count: 0,
+      projects: [
+        { id: "php", name: "Local project", complete: true, net_usd: "0", difference_php: "0" },
+        { id: "usd", name: "USD project", complete: true, net_usd: "2", difference_php: null },
+      ],
+      totals: {
+        reference_php: { php: "3", projects: 1 },
+        scenario_php: { php: "113", projects: 2 },
+        difference_php: { php: "0", projects: 1 },
+      },
+    } : url === "/api/fx" ? { last_run: null } : [],
+  )));
+  render(<App />);
+  expect(await screen.findByText(/scenario total includes more projects/i)).toBeVisible();
+  expect(screen.getByText("No comparison")).toBeVisible();
+});
+
 test.each([
   [502, "<html><h1>Bad Gateway</h1></html>", "Request failed (HTTP 502). Please try again."],
   [200, "<html>Unexpected page</html>", "The server returned an unexpected response. Please try again."],
