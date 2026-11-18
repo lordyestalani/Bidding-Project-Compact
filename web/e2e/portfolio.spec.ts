@@ -115,10 +115,11 @@ test("compare opposing USD exposures and open a project from the portfolio", asy
   await expect(cost).toContainText("PHP -100.00");
   await expect(income.locator(".gain-bar")).toBeVisible();
   await expect(cost.locator(".loss-bar")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 660 });
   await income.click();
-  await expect(
-    page.getByRole("heading", { name: `Portfolio incoming ${stamp}` }),
-  ).toBeVisible();
+  const heading = page.getByRole("heading", { name: `Portfolio incoming ${stamp}` });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
   await page.getByRole("link", { name: "Bidding and FX home" }).click();
   await expect(
     page.getByLabel("Portfolio scenario rate", { exact: true }),

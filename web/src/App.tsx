@@ -54,6 +54,14 @@ export function App() {
   const dirty = useRef(false),
     ticket = useRef(0),
     createKey = useRef(crypto.randomUUID());
+  const projectHeading = useRef<HTMLHeadingElement>(null);
+  const focusProject = useRef(false);
+  useEffect(() => {
+    if (focusProject.current) {
+      focusProject.current = false;
+      projectHeading.current?.focus();
+    }
+  }, [project]);
   const onDirty = useCallback((value: boolean) => {
     dirty.current = value;
   }, []);
@@ -105,7 +113,7 @@ export function App() {
       window.clearInterval(timer);
     };
   }, []);
-  async function open(id: string) {
+  async function open(id: string, focusHeading = true) {
     if (busy || !canLeave()) return;
     const current = ++ticket.current;
     setError("");
@@ -113,6 +121,7 @@ export function App() {
     try {
       const value = await request<Project>(`/projects/${id}`);
       if (current === ticket.current) {
+        focusProject.current = focusHeading;
         setProject(value);
         setEditing(false);
         dirty.current = false;
@@ -336,7 +345,7 @@ export function App() {
               disabled={busy}
               onClick={() => {
                 setError("");
-                if (project) void open(project.id);
+                if (project) void open(project.id, false);
                 else {
                   setPortfolioRevision((revision) => revision + 1);
                   void request<FX>("/fx")
@@ -372,7 +381,7 @@ export function App() {
               <div className="project-heading">
                 <div>
                   {project.archived && <span className="pill">Archived</span>}
-                  <h2>{project.name}</h2>
+                  <h2 ref={projectHeading} tabIndex={-1}>{project.name}</h2>
                   {project.customer && (
                     <p className="muted">{project.customer}</p>
                   )}
@@ -455,7 +464,7 @@ export function App() {
                     version={project.version}
                     referenceRate={project.fx.rate}
                     referenceDate={project.fx.observation_date}
-                    onReferenceChange={() => void open(project.id)}
+                    onReferenceChange={() => void open(project.id, false)}
                   />
                   <section className="panel flows">
                     <div className="section-head">
