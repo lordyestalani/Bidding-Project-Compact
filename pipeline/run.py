@@ -82,10 +82,17 @@ def run(
     # by dbt never take this lock; every pipeline entry point does.
     with psycopg.connect(url, autocommit=True) as conn:
         conn.execute("SELECT pg_advisory_lock(7241981)")
-        conn.execute(
-            "INSERT INTO ops.runs(id,start_date,end_date,status) VALUES(%s,%s,%s,'running')",
-            (run_id, start, end),
-        )
+        # Any running row left after acquiring the lock belongs to a dead session.
+        with conn.transaction():
+            conn.execute(
+                """UPDATE ops.runs SET status='failed',finished_at=now(),
+                   error='Ingestion was interrupted before publication. Last successful rates were retained.'
+                   WHERE status='running'"""
+            )
+            conn.execute(
+                "INSERT INTO ops.runs(id,start_date,end_date,status) VALUES(%s,%s,%s,'running')",
+                (run_id, start, end),
+            )
         try:
             response = fetch(start, end)
             response_id = retain_response(conn, run_id, response)
@@ -144,8 +151,6 @@ def run(
                 (run_id,),
             )
             raise
-        finally:
-            conn.execute("SELECT pg_advisory_unlock(7241981)")
     return str(run_id)
 
 

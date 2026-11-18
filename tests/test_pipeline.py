@@ -84,6 +84,31 @@ def test_failed_check_keeps_last_published_rate(database):
         )
 
 
+def test_next_ingestion_recovers_a_run_interrupted_before_publication(database):
+    start, end = date(2026, 10, 30), date(2026, 11, 1)
+    first = run(start, end, database, fetch=lambda *_: response(), check=lambda _: None)
+
+    def stop(_):
+        raise KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        run(start, end, database, fetch=lambda *_: response("60"), check=stop)
+
+    run(start, end, database, fetch=lambda *_: response(), check=lambda _: None)
+    with psycopg.connect(database) as conn:
+        assert conn.execute("SELECT count(*) FROM ops.runs WHERE status='running'").fetchone()[0] == 0
+        failed = conn.execute(
+            "SELECT id, finished_at, error FROM ops.runs WHERE status='failed'"
+        ).fetchone()
+        assert failed[1] is not None
+        assert "interrupted" in failed[2]
+        assert conn.execute(
+            "SELECT rate FROM raw.observations WHERE run_id=%s", (failed[0],)
+        ).fetchone()[0] == 60
+        rate, published_by = conn.execute("SELECT rate, run_id FROM analytics.fx_rates").fetchone()
+        assert rate == 58 and str(published_by) == first
+
+
 def test_invalid_source_body_is_retained(database):
     with pytest.raises(ValueError):
         run(
