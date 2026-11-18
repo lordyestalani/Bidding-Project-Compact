@@ -5,6 +5,9 @@ test("create, edit both cash flows, simulate, archive and restore", async ({
 }) => {
   await page.goto("/");
   const name = `Office equipment ${Date.now()}`;
+  const projectRow = page
+    .getByRole("complementary", { name: "Projects" })
+    .getByRole("button", { name: new RegExp(name) });
   await page.getByRole("button", { name: "Add project", exact: true }).click();
   await page.getByLabel("New project name").fill(name);
   await page
@@ -64,23 +67,19 @@ test("create, edit both cash flows, simulate, archive and restore", async ({
   await page.getByRole("button", { name: "Save project", exact: true }).click();
   await expect(page.locator(".profit-card")).toContainText("400,000.00");
   await page.reload();
-  await page.getByRole("button", { name: new RegExp(name) }).click();
+  await projectRow.click();
   await expect(page.locator(".profit-card")).toContainText("400,000.00");
   await page
     .getByRole("button", { name: "Archive project", exact: true })
     .click();
-  await expect(
-    page.getByRole("button", { name: new RegExp(name) }),
-  ).toHaveCount(0);
+  await expect(projectRow).toHaveCount(0);
   await page.getByLabel("Show archived projects").check();
-  await page.getByRole("button", { name: new RegExp(name) }).click();
+  await projectRow.click();
   await page
     .getByRole("button", { name: "Restore project", exact: true })
     .click();
   await page.getByLabel("Show archived projects").uncheck();
-  await expect(
-    page.getByRole("button", { name: new RegExp(name) }),
-  ).toBeVisible();
+  await expect(projectRow).toBeVisible();
 });
 
 test("compare opposing USD exposures and open a project from the portfolio", async ({
