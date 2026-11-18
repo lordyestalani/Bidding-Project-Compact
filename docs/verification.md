@@ -1,80 +1,47 @@
 # Verification
 
-Verified locally on 2026-11-02. These are results for the smaller rebuild, not
-copied acceptance counts from the original project.
+Run `./Test.ps1 -Browser` from the repository root with Docker and Node.js 24.
+The script builds the current API and frontend images and runs Chromium against
+the isolated `bidding_simple_test` database. [GitHub Actions](../.github/workflows/test.yml)
+runs the same command and also audits production npm dependencies.
 
-| Check | Result |
+## Latest local run
+
+| Check | Result on 2026-11-18 |
 | --- | --- |
-| Python, API, real PostgreSQL/dbt integration, including FX profit history | 37 passed |
-| React interaction tests, including chart and polling | 14 passed |
+| Python, API, PostgreSQL and dbt tests | 45 passed |
+| React component tests | 25 passed |
 | TypeScript check and Vite production build | Passed |
-| Browser journey against isolated test API/database | 1 passed |
-| Initial `Start.ps1`, schema/reporting setup, four service health checks | Passed |
-| `Stop.ps1` then `Start.ps1 -SkipBuild` | All 3 saved sample projects preserved |
-| Repeated synthetic project loader | 3 prepared, then 0 |
-| Real ECB/Frankfurter ingestion for 2026-10-30 through 2026-11-01 | Published successfully |
-| Airflow DAG import | No import errors |
-| Actual `airflow dags test fx_daily 2026-11-02` execution | Task and DAG succeeded |
+| Chromium browser journeys | 2 passed |
+| Nginx proxy after replacing the API container with a new IP | Recovered without reloading Nginx |
+| Production npm audit | 0 vulnerabilities |
 
-The browser journey covers creation, incoming USD/outgoing PHP, saving/reloading,
-numeric and slider simulation, reset, editing costs, archive/restore, and a
-390-pixel viewport without page overflow. Financial examples are independently
-specified in the tests. Browser fixtures are explicitly synthetic and isolated
-from the application's real FX observations.
+## Coverage
 
-The 90-day chart addition was verified against three independently calculated
-profit/loss points, PHP-only flat results, incomplete budgets, date bounds,
-future/old-observation exclusion, and read-only project facts. UI tests cover
-empty/single-point charts, scenario overlays, stale-result warnings, version
-conflicts, visible-page polling, and pausing in hidden pages. The browser journey
-checks the rendered historical SVG and the scenario line moving with the rate.
-The app has 63 real observations in its current 90-day window after a source
-backfill. An independent focused chart review found no Critical/Important issues.
+- API and dbt integration tests check project saves, reporting values, source
+  validation, and atomic rate publication against PostgreSQL. A real dbt check
+  rejects a candidate outside the requested dates.
+- Pipeline tests cover an empty range falling back to the preceding observation,
+  a valid range publishing without a fallback request, and the next run recovering
+  an interrupted run without losing the previously published rate.
+- Portfolio tests cover opposing USD exposure, exact sub-cent totals, and
+  coverage when the reference rate is unavailable. Frontend tests check that the
+  dashboard uses one FX snapshot, can retry after a failed load, and preserves
+  custom scenario rates across refreshes.
+- Browser tests cover creating and editing cash flows, moving the simulated line
+  on the chart, archiving and restoring projects, and opening project details from
+  the portfolio on mobile with the heading in view and focused.
 
-One browser assertion initially treated a horizontal SVG line's zero-height box
-as invisible. The test now verifies its rendered stroke and changing position;
-the browser journey passed afterward, including the final mobile label adjustment.
+## Development dependencies
 
-A minor interaction remains: a newly published daily reference rate refreshes the
-project and resets the active slider scenario. Profits display in cents while API
-calculations retain four places; the chart description and docs explain this.
+The 2026-11-18 npm audit reported one high-severity `picomatch` advisory through
+six development dependency entries. The latest published `picomatch` release
+was `4.0.7`, which is affected. The Vite development server binds to loopback by
+default. The deployed frontend is static files served by Nginx, and
+`npm audit --omit=dev` reported zero vulnerabilities. [GitHub advisory](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
 
-The real source run exposed a Sunday request returning a Friday anchor. The
-parser was corrected, a regression test was observed failing then passing, and
-the actual DAG was rerun successfully. The original observation date is retained.
+## Initial rebuild checks
 
-An independent read-only review identified three frontend defects. Each was
-reproduced with a failing test and fixed: navigation during an in-flight save,
-resetting an unchanged scenario rate, and a late refresh overriding the archive
-filter. All nine UI tests and the full browser journey passed afterward.
-
-One intermediate test run was invalidated by overlapping a PostgreSQL restart
-with integration tests. The final documented command ran serially and passed.
-
-## Additional coverage left for later
-
-- Reject a deliberately invalid candidate using a real failing dbt test; the
-  existing failure-retention integration test injects a failed check callback.
-- Exercise concurrent pipeline runs and older retrieval timestamps explicitly;
-  the protections are implemented but do not yet have dedicated race tests.
-- Assert DAG timetable/retry/catchup settings automatically; date arithmetic and
-  real DAG import/execution are verified.
-
-## Implementation decisions
-
-- Rebuilt directly at the workspace root and removed the old local source after
-  the user explicitly authorized a clean slate and confirmed having another copy.
-  The original is no longer available in this folder.
-- Used file-based review and tests because the downloaded folder had no Git
-  metadata when implementation started. At handoff it has an empty `main`
-  repository with all source uncommitted and no remote. No commits, worktrees,
-  remote pushes, or pull requests were created by this implementation.
-- Updated the earlier nested `portfolio/` plan to a root layout under that later
-  instruction. Nothing depends on files outside the project.
-- Used the official Airflow standalone mode to keep the local educational setup
-  small. A production deployment would need a different operational design.
-- Kept working notes in ignored `.superpowers/` rather than Git-based helper
-  records. This workspace has no commit history for the implementation session.
-- Kept public authentication, actual payments, forecasts, holiday-adjusted feeds,
-  and project history outside the approved scope. This is a local planned-cash-flow
-  demonstration; public multiuser hosting and accounting are separate future work.
+On 2026-11-02, local verification also covered first startup, volume persistence
+across stop and restart, idempotent sample loading, a live Frankfurter backfill,
+and successful execution of the Airflow DAG. These were point-in-time checks.

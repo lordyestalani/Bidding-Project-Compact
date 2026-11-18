@@ -199,8 +199,9 @@ inclusive days per invocation.
 Raw responses keep the request URL, timestamp, checksum, and body. Candidate
 rates are checked before a transaction publishes them. Identical reruns do not
 duplicate logical rates; source corrections retain raw provenance. Failed runs
-keep the last successful published rates. Runs are serialized with a database
-lock. A weekend uses the real preceding observation date, not a fabricated rate.
+keep the last successful published rates. The next run marks any interrupted
+run as failed after acquiring the database lock. If the range returns no rates,
+the pipeline requests the preceding observation and keeps its original date.
 
 Reporting views read current saved cash flows, so editing a project does not wait
 for another DAG run. Monetary API values are decimal strings; calculations use
@@ -229,7 +230,7 @@ After initial startup, run the Python and real dbt tests in Docker:
 .\Test.ps1
 ```
 
-For frontend/component tests, a production build, and the complete browser journey,
+For frontend/component tests, a production build, and the browser journeys,
 install Node.js 24 LTS and run:
 
 ```powershell
@@ -240,8 +241,10 @@ Tests reset only the explicitly named `bidding_simple_test` database. Browser te
 use a separate API/frontend and labeled offline FX fixtures. They never replace
 the application's published rates. Avoid running multiple test invocations together.
 
-See the [verification record](docs/verification.md) for observed results and the
-additional automated coverage left for later.
+The browser test command builds the current API and frontend before starting
+the test services. [GitHub Actions](.github/workflows/test.yml) runs the same
+suite on pull requests and pushes to `main`. See [verification](docs/verification.md)
+for coverage and results.
 
 For frontend-only development:
 
@@ -251,8 +254,9 @@ npm ci
 npm run dev
 ```
 
-Vite proxies the API to localhost:18080. Python changes are copied into the Docker
-image, so rebuild through Start.ps1 to use them in the running application.
+Vite listens on `127.0.0.1` and proxies the API to `localhost:18080`. Python
+changes are copied into the Docker image, so rebuild through `Start.ps1` to use
+them in the running application.
 
 ## Limits and sources
 

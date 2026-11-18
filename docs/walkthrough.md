@@ -12,6 +12,8 @@ observation date; a Sunday request may return Friday's rate.
 `raw.responses` **before** parsing it. Its URL, fetched timestamp, body, and SHA-256
 checksum explain where a rate came from. Validated rows enter `raw.observations`
 with the run and response IDs. A database lock serializes pipeline executions.
+The next run uses that lock to mark interrupted runs as failed. An empty range
+uses the preceding observation when the source supplies one.
 
 ## 2. Stage, check, publish
 
@@ -76,6 +78,13 @@ snapshots. Source update failures keep the last chart with an explicit warning.
 Observation-table profits use the same two-decimal display as the other cards;
 API values preserve the precision of the calculation. A new reference rate
 refreshes the project and comparison while preserving a custom scenario rate.
+
+The home dashboard calls `/api/portfolio` for active projects. `api/portfolio.py`
+uses the same Decimal calculation and sums each estimate before formatting it
+for display. The dashboard reads its reference rate and estimates from one
+response. The shared `RateControl.tsx` drives the slider and numeric input on
+both screens. The portfolio FX impact includes projects that can be valued at
+both the reference and hypothetical rates.
 
 ## Three examples you can explain by hand
 
