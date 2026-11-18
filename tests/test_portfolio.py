@@ -71,3 +71,17 @@ def test_no_reference_rate_preserves_portfolio_coverage(client):
         "difference_php": {"php": "0.0000", "projects": 1},
     }
     assert client.get("/api/portfolio", params={"rate": "0"}).status_code == 422
+
+
+def test_portfolio_keeps_sub_cent_precision_when_summing_projects(client, database):
+    seed_rates(database)
+    for name in ("First project", "Second project"):
+        create_project(client, name, [line("incoming", "USD", "0.0001")])
+
+    result = client.get("/api/portfolio", params={"rate": "49.5"}).json()
+    assert result["totals"] == {
+        "reference_php": {"php": "0.0116", "projects": 2},
+        "scenario_php": {"php": "0.0099", "projects": 2},
+        "difference_php": {"php": "-0.0017", "projects": 2},
+    }
+    assert [row["scenario_php"] for row in result["projects"]] == ["0.00495"] * 2

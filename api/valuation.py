@@ -22,6 +22,28 @@ def money(value: Decimal) -> str:
     return f"{whole}.{fraction.rstrip('0').ljust(4, '0')}"
 
 
+def calculate_metrics(
+    in_php: Decimal,
+    in_usd: Decimal,
+    out_php: Decimal,
+    out_usd: Decimal,
+    complete: bool,
+    rate: Decimal | None,
+) -> dict[str, Decimal | None]:
+    with localcontext() as context:
+        context.prec = 50
+        net_usd = in_usd - out_usd
+        available = complete and (rate is not None or (in_usd == 0 and out_usd == 0))
+        incoming = in_php + in_usd * (rate or 0)
+        outgoing = out_php + out_usd * (rate or 0)
+        return {
+            "incoming_php": incoming if available else None,
+            "outgoing_php": outgoing if available else None,
+            "profit_php": incoming - outgoing if available else None,
+            "net_usd": net_usd if complete else None,
+        }
+
+
 def metrics(
     in_php: Decimal,
     in_usd: Decimal,
@@ -30,16 +52,7 @@ def metrics(
     complete: bool,
     rate: Decimal | None,
 ) -> dict:
-    with localcontext() as context:
-        context.prec = 50
-        net_usd = in_usd - out_usd
-        available = complete and (rate is not None or (in_usd == 0 and out_usd == 0))
-        incoming = in_php + in_usd * (rate or 0)
-        outgoing = out_php + out_usd * (rate or 0)
-        return {
-            "incoming_php": money(incoming) if available else None,
-            "outgoing_php": money(outgoing) if available else None,
-            "profit_php": money(incoming - outgoing) if available else None,
-            "net_usd": money(net_usd) if complete else None,
-            "complete": complete,
-        }
+    values = calculate_metrics(in_php, in_usd, out_php, out_usd, complete, rate)
+    return {key: money(value) if value is not None else None for key, value in values.items()} | {
+        "complete": complete,
+    }

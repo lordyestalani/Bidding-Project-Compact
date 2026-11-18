@@ -3,7 +3,7 @@
 from decimal import Decimal, localcontext
 
 from api import store
-from api.valuation import metrics, money
+from api.valuation import calculate_metrics, money
 
 
 def portfolio(conn, rate: Decimal | None):
@@ -27,30 +27,28 @@ def portfolio(conn, rate: Decimal | None):
         context.prec = 50
         for budget in budgets:
             project_id, name = budget.pop("id"), budget.pop("name")
-            baseline = metrics(**budget, rate=reference_rate)["profit_php"]
-            scenario_values = metrics(**budget, rate=scenario_rate)
+            baseline = calculate_metrics(**budget, rate=reference_rate)["profit_php"]
+            scenario_values = calculate_metrics(**budget, rate=scenario_rate)
             scenario = scenario_values["profit_php"]
-            difference = (
-                money(Decimal(scenario) - Decimal(baseline))
-                if baseline is not None and scenario is not None
-                else None
-            )
             values = {
                 "reference_php": baseline,
                 "scenario_php": scenario,
-                "difference_php": difference,
+                "difference_php": (
+                    scenario - baseline if baseline is not None and scenario is not None else None
+                ),
             }
             for key, value in values.items():
                 if value is not None:
-                    totals[key] += Decimal(value)
+                    totals[key] += value
                     counts[key] += 1
+            net_usd = scenario_values["net_usd"]
             projects.append(
                 {
                     "id": project_id,
                     "name": name,
                     "complete": budget["complete"],
-                    "net_usd": scenario_values["net_usd"],
-                    **values,
+                    "net_usd": money(net_usd) if net_usd is not None else None,
+                    **{key: money(value) if value is not None else None for key, value in values.items()},
                 }
             )
 
